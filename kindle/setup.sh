@@ -2,11 +2,17 @@
 # ==============================================================================
 # Kindle Initial Setup Script: kindle-trmnl-dashboard
 # Optimized for: Kindle WP63GW (7th Gen Basic - KT2 / Touch 2)
-# Run once on your jailbroken Kindle: sh /mnt/us/kindle-trmnl-dashboard/setup.sh
+# Run once on your jailbroken Kindle: sh /mnt/us/kindle-trmnl-dashboard/kindle/setup.sh
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-. "${SCRIPT_DIR}/config.sh"
+
+# Locate config.sh
+if [ -f "${SCRIPT_DIR}/config.sh" ]; then
+    . "${SCRIPT_DIR}/config.sh"
+fi
+
+SERVER_URL="${SERVER_URL:-http://10.0.0.219:5055}"
 
 echo "=================================================="
 echo "🔧 Configuring Kindle TRMNL Dashboard Display"
@@ -16,10 +22,10 @@ echo "=================================================="
 
 # 1. Make all helper scripts executable
 chmod +x "${SCRIPT_DIR}"/*.sh 2>/dev/null || true
-chmod +x "${SCRIPT_DIR}/bin"/* 2>/dev/null || true
+chmod +x "${SCRIPT_DIR}/kual/kindle-trmnl"/*.sh 2>/dev/null || true
 chmod +x "${SCRIPT_DIR}/kual/kindle-trmnl/bin"/* 2>/dev/null || true
 
-# 2. Check for fbink binary
+# 2. Check for fbink or native eips
 FOUND_FBINK=""
 if [ -n "$FBINK_BIN" ] && [ -x "$FBINK_BIN" ]; then
     FOUND_FBINK="$FBINK_BIN"
@@ -35,10 +41,10 @@ fi
 
 if [ -n "$FOUND_FBINK" ]; then
     echo "✅ Found fbink at: $FOUND_FBINK"
+elif command -v eips >/dev/null 2>&1; then
+    echo "✅ Found built-in eips display tool! (Auto-rotation enabled via server)"
 else
-    echo "⚠️  fbink binary not found in standard paths!"
-    echo "   Please download the NiLuJe FBInk binary for your Kindle model and copy it to:"
-    echo "   ${SCRIPT_DIR}/bin/fbink"
+    echo "⚠️  Neither fbink nor eips found!"
 fi
 
 # 3. Disable screensaver and power down timers
@@ -61,13 +67,21 @@ lipc-set-prop com.lab126.blanket unload 2>/dev/null || true
 
 # 6. Auto-install KUAL Extension to /mnt/us/extensions/kindle-trmnl
 if [ -d "/mnt/us/extensions" ]; then
-    echo "📦 Installing KUAL extension to /mnt/us/extensions/kindle-trmnl..."
+    echo "📦 Installing self-contained KUAL extension to /mnt/us/extensions/kindle-trmnl..."
+
+    # Clean up any stray root files that cause buttons to spill onto KUAL's main menu
+    rm -f /mnt/us/extensions/menu.json
+    rm -f /mnt/us/extensions/config.xml
+
     mkdir -p /mnt/us/extensions/kindle-trmnl/bin
     cp -f "${SCRIPT_DIR}/kual/kindle-trmnl/config.xml" /mnt/us/extensions/kindle-trmnl/
     cp -f "${SCRIPT_DIR}/kual/kindle-trmnl/menu.json" /mnt/us/extensions/kindle-trmnl/
+    cp -f "${SCRIPT_DIR}/config.sh" /mnt/us/extensions/kindle-trmnl/
+    cp -f "${SCRIPT_DIR}/display.sh" /mnt/us/extensions/kindle-trmnl/
+    cp -f "${SCRIPT_DIR}/loop.sh" /mnt/us/extensions/kindle-trmnl/
     cp -f "${SCRIPT_DIR}/kual/kindle-trmnl/bin/"*.sh /mnt/us/extensions/kindle-trmnl/bin/
-    chmod +x /mnt/us/extensions/kindle-trmnl/bin/*.sh 2>/dev/null || true
-    echo "✅ KUAL extension installed! You will see 'Kindle TRMNL' in your KUAL menu."
+    chmod +x /mnt/us/extensions/kindle-trmnl/*.sh /mnt/us/extensions/kindle-trmnl/bin/*.sh 2>/dev/null || true
+    echo "✅ KUAL extension installed! You will see 'Kindle TRMNL' submenu in KUAL."
 else
     echo "ℹ️  /mnt/us/extensions directory not found. Please ensure KUAL is installed."
 fi
@@ -77,7 +91,12 @@ echo "🌐 Testing connection to server: $SERVER_URL/api/setup ..."
 lipc-set-prop com.lab126.cmd wirelessEnable 1 2>/dev/null || true
 sleep 4
 
-SETUP_STATUS=$(curl -s -m 8 "$SERVER_URL/api/setup" 2>/dev/null || wget -q -O - "$SERVER_URL/api/setup" 2>/dev/null)
+SETUP_STATUS=""
+if command -v curl >/dev/null 2>&1; then
+    SETUP_STATUS="$(curl -s -m 8 "$SERVER_URL/api/setup" 2>/dev/null)"
+elif command -v wget >/dev/null 2>&1; then
+    SETUP_STATUS="$(wget -q -O - -T 8 "$SERVER_URL/api/setup" 2>/dev/null)"
+fi
 
 if echo "$SETUP_STATUS" | grep -q "Connected to self-hosted TRMNL"; then
     echo "✅ Successfully connected to self-hosted TRMNL server at $SERVER_URL!"
@@ -89,6 +108,6 @@ fi
 lipc-set-prop com.lab126.cmd wirelessEnable 0 2>/dev/null || true
 
 echo "=================================================="
-echo "🎉 Setup complete! You can now launch the dashboard via KUAL"
-echo "   or run: sh ${SCRIPT_DIR}/display.sh"
+echo "🎉 Setup complete! Launch 'Kindle TRMNL' in KUAL"
+echo "   or run: sh /mnt/us/extensions/kindle-trmnl/display.sh"
 echo "=================================================="

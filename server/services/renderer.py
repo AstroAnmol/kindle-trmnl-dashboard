@@ -18,6 +18,7 @@ templates_env = Environment(
 _cached_image_bytes: bytes = b""
 _cached_image_time: float = 0.0
 _cached_format: str = ""
+_cached_rotation: int = 0
 
 def invalidate_render_cache():
     global _cached_image_time
@@ -81,14 +82,26 @@ def _render_fallback_pillow(context: Dict[str, Any]) -> bytes:
     img.save(buf, format="PNG")
     return buf.getvalue()
 
-async def render_dashboard_image(context: Dict[str, Any], force_refresh: bool = False) -> Tuple[bytes, str]:
-    global _cached_image_bytes, _cached_image_time, _cached_format
+async def render_dashboard_image(context: Dict[str, Any], force_refresh: bool = False, rotate: Optional[int] = None) -> Tuple[bytes, str]:
+    global _cached_image_bytes, _cached_image_time, _cached_format, _cached_rotation
 
     img_format = settings.image_format.lower()
     now_ts = time.time()
 
+    # Determine effective rotation
+    effective_rot = settings.screen_orientation
+    if rotate is not None:
+        if rotate == 1:
+            effective_rot = 90
+        elif rotate == 2:
+            effective_rot = 180
+        elif rotate == 3:
+            effective_rot = 270
+        elif rotate in [90, 180, 270]:
+            effective_rot = rotate
+
     # Check cache validity
-    if not force_refresh and _cached_image_bytes and (now_ts - _cached_image_time < settings.cache_ttl_seconds) and (_cached_format == img_format):
+    if not force_refresh and _cached_image_bytes and (now_ts - _cached_image_time < settings.cache_ttl_seconds) and (_cached_format == img_format) and (_cached_rotation == effective_rot):
         return _cached_image_bytes, img_format
 
     html_content = render_html_content(context)
@@ -122,8 +135,8 @@ async def render_dashboard_image(context: Dict[str, Any], force_refresh: bool = 
     image = Image.open(io.BytesIO(raw_png_bytes))
 
     # Apply Screen Orientation Rotation
-    if settings.screen_orientation in [90, 180, 270]:
-        image = image.rotate(360 - settings.screen_orientation, expand=True)
+    if effective_rot in [90, 180, 270]:
+        image = image.rotate(360 - effective_rot, expand=True)
 
     # Convert Color Mode
     if settings.color_mode == "1bit":
@@ -146,5 +159,6 @@ async def render_dashboard_image(context: Dict[str, Any], force_refresh: bool = 
     _cached_image_bytes = final_bytes
     _cached_image_time = now_ts
     _cached_format = img_format
+    _cached_rotation = effective_rot
 
     return final_bytes, img_format

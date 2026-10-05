@@ -156,6 +156,8 @@ async def api_display(
     token_header: Optional[str] = Header(None, alias="Access-Token"),
     mac_param: Optional[str] = Query(None, alias="mac"),
     format_param: Optional[str] = Query(None, alias="format"),
+    rotate: Optional[int] = Query(None, description="Rotation degrees: 90, 180, 270 or 1, 2, 3"),
+    orientation: Optional[int] = Query(None, description="Alias for rotate"),
     force: bool = Query(False, alias="force")
 ):
     """
@@ -174,8 +176,9 @@ async def api_display(
                 detail="Unauthorized Kindle Device ID or Access Token"
             )
 
+    eff_rot = rotate if rotate is not None else orientation
     context = await build_dashboard_context()
-    image_bytes, out_format = await render_dashboard_image(context, force_refresh=force)
+    image_bytes, out_format = await render_dashboard_image(context, force_refresh=force, rotate=eff_rot)
 
     media_type = "image/bmp" if out_format == "bmp" else "image/png"
 
