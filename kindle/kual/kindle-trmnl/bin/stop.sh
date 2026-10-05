@@ -15,6 +15,4 @@ killall -9 display.sh loop.sh 2>/dev/null || true
 lipc-set-prop com.lab126.powerd preventScreenSaver 0 2>/dev/null || true
 lipc-set-prop com.lab126.cmd wirelessEnable 1 2>/dev/null || true
 
-if command -v eips >/dev/null 2>&1; then
-    eips 0 39 "TRMNL: Loop stopped. Wi-Fi restored." 2>/dev/null || true
-fi
+eips 0 39 "TRMNL: Loop stopped. Wi-Fi restored." 2>/dev/null || true

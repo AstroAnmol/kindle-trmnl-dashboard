@@ -7,30 +7,26 @@
         {
           "name": "Refresh Screen Once",
           "priority": 1,
-          "action": "/bin/sh",
-          "params": "bin/once.sh",
+          "action": "bin/once.sh",
           "exitmenu": true
         },
         {
           "name": "Start Dashboard Loop",
           "priority": 2,
-          "action": "/bin/sh",
-          "params": "bin/start.sh",
+          "action": "bin/start.sh",
           "exitmenu": true
         },
         {
           "name": "Stop Dashboard Loop",
           "priority": 3,
-          "action": "/bin/sh",
-          "params": "bin/stop.sh",
+          "action": "bin/stop.sh",
           "exitmenu": false,
           "refresh": true
         },
         {
           "name": "Status & Diagnostics",
           "priority": 4,
-          "action": "/bin/sh",
-          "params": "bin/status.sh",
+          "action": "bin/status.sh",
           "exitmenu": false
         }
       ]

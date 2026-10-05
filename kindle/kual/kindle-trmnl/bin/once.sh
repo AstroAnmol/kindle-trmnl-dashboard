@@ -2,15 +2,13 @@
 # ==============================================================================
 # Kindle TRMNL - Refresh Screen Once
 # ==============================================================================
+eips 0 38 "TRMNL: Refreshing display..." 2>/dev/null || true
+eips 0 39 "Please wait 5-8 seconds..." 2>/dev/null || true
+
 EXT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Auto-strip any Windows carriage returns from scripts in-place
 sed -i -e 's/\r$//' "${EXT_DIR}"/*.sh "${EXT_DIR}/bin"/*.sh 2>/dev/null || true
 chmod +x "${EXT_DIR}"/*.sh "${EXT_DIR}/bin"/*.sh 2>/dev/null || true
-
-if command -v eips >/dev/null 2>&1; then
-    eips 0 39 "TRMNL: Refreshing screen..." 2>/dev/null || true
-fi
 
 DISPLAY_SCRIPT=""
 if [ -f "${EXT_DIR}/display.sh" ]; then
@@ -19,18 +17,12 @@ elif [ -f "/mnt/us/extensions/kindle-trmnl/display.sh" ]; then
     DISPLAY_SCRIPT="/mnt/us/extensions/kindle-trmnl/display.sh"
 elif [ -f "/mnt/us/kindle-trmnl-dashboard/kindle/display.sh" ]; then
     DISPLAY_SCRIPT="/mnt/us/kindle-trmnl-dashboard/kindle/display.sh"
-elif [ -f "/mnt/us/kindle-trmnl-dashboard/display.sh" ]; then
-    DISPLAY_SCRIPT="/mnt/us/kindle-trmnl-dashboard/display.sh"
-elif [ -f "/mnt/us/kindle/display.sh" ]; then
-    DISPLAY_SCRIPT="/mnt/us/kindle/display.sh"
 elif [ -f "/mnt/us/display.sh" ]; then
     DISPLAY_SCRIPT="/mnt/us/display.sh"
 fi
 
 if [ -n "$DISPLAY_SCRIPT" ]; then
-    nohup /bin/sh "$DISPLAY_SCRIPT" >/tmp/kindle-once.log 2>&1 &
+    nohup sh "$DISPLAY_SCRIPT" >/tmp/kindle-once.log 2>&1 &
 else
-    if command -v eips >/dev/null 2>&1; then
-        eips 0 39 "TRMNL Error: display.sh not found!" 2>/dev/null || true
-    fi
+    eips 0 39 "TRMNL Error: display.sh not found!" 2>/dev/null || true
 fi
