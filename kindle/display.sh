@@ -2,38 +2,38 @@
 # ==============================================================================
 # Kindle Client Script: kindle-trmnl-dashboard
 # Optimized for: Kindle WP63GW (7th Gen Basic - KT2 / Touch 2)
-# Compatible with: eips (built-in) and fbink (NiLuJe)
-# Supported transfer tools: curl and busybox wget
+# Compatible with: native eips (built-in) and fbink (NiLuJe)
 # ==============================================================================
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Auto-strip Windows carriage returns if any
+sed -i -e 's/\r$//' "${SCRIPT_DIR}"/*.sh "${SCRIPT_DIR}/bin"/*.sh 2>/dev/null || true
 
 # Locate config.sh
 if [ -f "${SCRIPT_DIR}/config.sh" ]; then
     . "${SCRIPT_DIR}/config.sh"
 elif [ -f "/mnt/us/extensions/kindle-trmnl/config.sh" ]; then
     . "/mnt/us/extensions/kindle-trmnl/config.sh"
-elif [ -f "/mnt/us/kindle-trmnl-dashboard/kindle/config.sh" ]; then
-    . "/mnt/us/kindle-trmnl-dashboard/kindle/config.sh"
-elif [ -f "/mnt/us/kindle-trmnl-dashboard/config.sh" ]; then
-    . "/mnt/us/kindle-trmnl-dashboard/config.sh"
 fi
 
-# Fallback defaults
 SERVER_URL="${SERVER_URL:-http://10.0.0.219:5055}"
 DEFAULT_INTERVAL="${DEFAULT_INTERVAL:-900}"
 FBINK_ROTATION="${FBINK_ROTATION:-1}"
-WIFI_TIMEOUT="${WIFI_TIMEOUT:-20}"
+WIFI_TIMEOUT="${WIFI_TIMEOUT:-15}"
 LOW_BATTERY_THRESHOLD="${LOW_BATTERY_THRESHOLD:-10}"
-CRITICAL_SLEEP_INTERVAL="${CRITICAL_SLEEP_INTERVAL:-86400}"
 LOG_FILE="${LOG_FILE:-/tmp/kindle-trmnl.log}"
+
+# Check if run with --sleep (e.g. from background loop)
+SLEEP_MODE=0
+if [ "$1" = "--sleep" ] || [ "$LOOP_MODE" = "1" ]; then
+    SLEEP_MODE=1
+fi
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') [TRMNL] $*" >> "$LOG_FILE"
     echo "[TRMNL] $*"
 }
-
-log "Starting dashboard display refresh..."
 
 # ------------------------------------------------------------------------------
 # 1. Detect fbink binary
@@ -55,14 +55,8 @@ elif [ -x "/mnt/us/kual/bin/fbink" ]; then
     FOUND_FBINK="/mnt/us/kual/bin/fbink"
 fi
 
-if [ -n "$FOUND_FBINK" ]; then
-    log "Using FBInk at: $FOUND_FBINK (rotation: $FBINK_ROTATION)"
-else
-    log "FBInk not found. Will use native eips with server-side rotation."
-fi
-
 # ------------------------------------------------------------------------------
-# 2. Detect Device MAC Address (Unique Device ID)
+# 2. Detect Device MAC Address
 # ------------------------------------------------------------------------------
 MAC_ADDR=""
 if [ -f /sys/class/net/wlan0/address ]; then
@@ -72,16 +66,11 @@ if [ -z "$MAC_ADDR" ]; then
     MAC_ADDR="$(lipc-get-prop com.lab126.cmd macAddress 2>/dev/null | tr -d '\r\n')"
 fi
 if [ -z "$MAC_ADDR" ]; then
-    MAC_ADDR="$(ifconfig wlan0 2>/dev/null | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}' | head -n 1)"
-fi
-if [ -z "$MAC_ADDR" ]; then
     MAC_ADDR="kindle-wp63gw"
 fi
 
-DEVICE_TOKEN="${API_TOKEN:-$MAC_ADDR}"
-
 # ------------------------------------------------------------------------------
-# 3. Read Battery Capacity & Voltage (Kindle WP63GW / KT2 sysfs nodes)
+# 3. Read Battery Capacity & Voltage
 # ------------------------------------------------------------------------------
 BATT_PERCENT=100
 if [ -f /sys/devices/system/yoshi_battery/battery_capacity ]; then
@@ -90,44 +79,29 @@ elif [ -f /sys/class/power_supply/battery/capacity ]; then
     BATT_PERCENT="$(cat /sys/class/power_supply/battery/capacity | tr -d '\r\n')"
 elif [ -f /sys/class/power_supply/max77696-battery/capacity ]; then
     BATT_PERCENT="$(cat /sys/class/power_supply/max77696-battery/capacity | tr -d '\r\n')"
-elif [ -f /sys/class/power_supply/mc13892_battery/capacity ]; then
-    BATT_PERCENT="$(cat /sys/class/power_supply/mc13892_battery/capacity | tr -d '\r\n')"
-elif [ -f /sys/devices/platform/pmic_battery.1/power_supply/pmic_battery/capacity ]; then
-    BATT_PERCENT="$(cat /sys/devices/platform/pmic_battery.1/power_supply/pmic_battery/capacity | tr -d '\r\n')"
-else
-    LIPC_BATT="$(lipc-get-prop com.lab126.powerd battLevel 2>/dev/null | tr -d '\r\n')"
-    if [ -n "$LIPC_BATT" ]; then
-        BATT_PERCENT="$LIPC_BATT"
-    fi
 fi
 
 BATT_VOLTAGE=4.0
 if [ -f /sys/devices/system/yoshi_battery/battery_voltage ]; then
     RAW_V="$(cat /sys/devices/system/yoshi_battery/battery_voltage | tr -d '\r\n')"
-    BATT_VOLTAGE=$(awk -v v="$RAW_V" 'BEGIN { printf "%.2f", (v > 1000 ? v/1000 : v) }')
-elif [ -f /sys/class/power_supply/max77696-battery/voltage_now ]; then
-    RAW_V="$(cat /sys/class/power_supply/max77696-battery/voltage_now | tr -d '\r\n')"
-    BATT_VOLTAGE=$(awk -v v="$RAW_V" 'BEGIN { printf "%.2f", (v > 1000000 ? v/1000000 : (v > 1000 ? v/1000 : v)) }')
-elif [ -f /sys/class/power_supply/mc13892_battery/voltage_now ]; then
-    RAW_V="$(cat /sys/class/power_supply/mc13892_battery/voltage_now | tr -d '\r\n')"
-    BATT_VOLTAGE=$(awk -v v="$RAW_V" 'BEGIN { printf "%.2f", (v > 1000000 ? v/1000000 : (v > 1000 ? v/1000 : v)) }')
-elif [ -f /sys/class/power_supply/battery/voltage_now ]; then
-    RAW_V="$(cat /sys/class/power_supply/battery/voltage_now | tr -d '\r\n')"
-    BATT_VOLTAGE=$(awk -v v="$RAW_V" 'BEGIN { printf "%.2f", (v > 1000000 ? v/1000000 : (v > 1000 ? v/1000 : v)) }')
+    BATT_VOLTAGE=$(awk -v v="$RAW_V" 'BEGIN { printf "%.2f", (v > 1000 ? v/1000 : v) }' 2>/dev/null || echo "4.0")
 fi
 
 log "Device MAC: $MAC_ADDR | Battery: ${BATT_PERCENT}% (${BATT_VOLTAGE}V)"
 
 # ------------------------------------------------------------------------------
-# 4. Turn ON Wi-Fi and Wait for Connection
+# 4. Turn ON Wi-Fi
 # ------------------------------------------------------------------------------
-log "Enabling Wi-Fi..."
+if command -v eips >/dev/null 2>&1; then
+    eips 0 39 "TRMNL: Enabling Wi-Fi..." 2>/dev/null || true
+fi
+
 lipc-set-prop com.lab126.cmd wirelessEnable 1 2>/dev/null || true
 
 CONNECTED=0
 TIMER=0
 while [ $TIMER -lt $WIFI_TIMEOUT ]; do
-    if ifconfig wlan0 2>/dev/null | grep -q "inet addr:" || ip route show 2>/dev/null | grep -q "default"; then
+    if ifconfig wlan0 2>/dev/null | grep -q "inet addr:" || ifconfig wlan0 2>/dev/null | grep -q "inet "; then
         CONNECTED=1
         break
     fi
@@ -135,145 +109,102 @@ while [ $TIMER -lt $WIFI_TIMEOUT ]; do
     TIMER=$((TIMER + 1))
 done
 
+# If loop exited without match, give 2 more seconds grace
 if [ $CONNECTED -eq 0 ]; then
-    log "⚠️  Wi-Fi connection timed out after ${WIFI_TIMEOUT}s."
+    sleep 2
+    if ifconfig wlan0 2>/dev/null | grep -q "inet"; then
+        CONNECTED=1
+    fi
+fi
+
+if [ $CONNECTED -eq 0 ]; then
+    log "⚠️  Wi-Fi connection timed out."
     if command -v eips >/dev/null 2>&1; then
-        eips 0 39 "TRMNL: Wi-Fi connection timed out" 2>/dev/null || true
+        eips 0 39 "TRMNL: Wi-Fi timed out. Check connection." 2>/dev/null || true
     fi
-else
-    log "Wi-Fi connected in ${TIMER}s."
+    exit 1
 fi
 
-# Read Wi-Fi Signal RSSI
-RSSI=-60
-LIPC_RSSI="$(lipc-get-prop com.lab126.cmd wirelessSignal 2>/dev/null | tr -d '\r\n')"
-if [ -n "$LIPC_RSSI" ] && [ "$LIPC_RSSI" -ne 0 ] 2>/dev/null; then
-    RSSI="$LIPC_RSSI"
-elif [ -f /proc/net/wireless ]; then
-    PROC_RSSI="$(awk 'NR==3 {print $4}' /proc/net/wireless | tr -d '.\r\n')"
-    if [ -n "$PROC_RSSI" ]; then
-        RSSI="$PROC_RSSI"
-    fi
-fi
+log "Wi-Fi connected in ${TIMER}s."
 
 # ------------------------------------------------------------------------------
-# 5. POST Telemetry to /api/log (supports curl or wget)
+# 5. POST Telemetry
 # ------------------------------------------------------------------------------
-if [ $CONNECTED -eq 1 ]; then
-    JSON_PAYLOAD="{\"device_id\":\"$MAC_ADDR\",\"battery_percent\":$BATT_PERCENT,\"battery_voltage\":$BATT_VOLTAGE,\"signal_strength\":$RSSI,\"firmware_version\":\"WP63GW-KT2\"}"
-    if command -v curl >/dev/null 2>&1; then
-        curl -s -m 6 -X POST \
-            -H "Content-Type: application/json" \
-            -d "$JSON_PAYLOAD" \
-            "${SERVER_URL}/api/log" >/dev/null 2>&1 || true
-    elif command -v wget >/dev/null 2>&1; then
-        wget -q -O /dev/null -T 6 \
-            --post-data="$JSON_PAYLOAD" \
-            --header="Content-Type: application/json" \
-            "${SERVER_URL}/api/log" >/dev/null 2>&1 || true
-    fi
+JSON_PAYLOAD="{\"device_id\":\"$MAC_ADDR\",\"battery_percent\":$BATT_PERCENT,\"battery_voltage\":$BATT_VOLTAGE,\"signal_strength\":-50,\"firmware_version\":\"WP63GW-KT2\"}"
+if command -v curl >/dev/null 2>&1; then
+    curl -s -m 5 -X POST -H "Content-Type: application/json" -d "$JSON_PAYLOAD" "${SERVER_URL}/api/log" >/dev/null 2>&1 || true
+elif command -v wget >/dev/null 2>&1; then
+    wget -q -O /dev/null --post-data="$JSON_PAYLOAD" "${SERVER_URL}/api/log" >/dev/null 2>&1 || true
 fi
 
 # ------------------------------------------------------------------------------
-# 6. Fetch Display Image from /api/display
+# 6. Fetch Display Image
 # ------------------------------------------------------------------------------
 SCREEN_FILE="/tmp/screen.png"
-HEADERS_FILE="/tmp/headers.txt"
-INTERVAL="$DEFAULT_INTERVAL"
+rm -f "$SCREEN_FILE"
+
+if [ -n "$FOUND_FBINK" ]; then
+    FETCH_URL="${SERVER_URL}/api/display?mac=${MAC_ADDR}"
+else
+    # Tell server to rotate 90° so native eips draws landscape on 600x800 panel
+    FETCH_URL="${SERVER_URL}/api/display?mac=${MAC_ADDR}&rotate=90"
+fi
+
+if command -v eips >/dev/null 2>&1; then
+    eips 0 39 "TRMNL: Downloading dashboard..." 2>/dev/null || true
+fi
+
+log "Fetching display image from ${FETCH_URL} ..."
+
 FETCH_EXIT=1
-
-if [ $CONNECTED -eq 1 ]; then
-    # If fbink is available, fbink handles rotation (-r 1).
-    # If fbink is NOT available, tell server to rotate 90° so eips draws native landscape.
-    if [ -n "$FOUND_FBINK" ]; then
-        FETCH_URL="${SERVER_URL}/api/display"
-    else
-        FETCH_URL="${SERVER_URL}/api/display?rotate=90"
-    fi
-
-    log "Fetching display image from ${FETCH_URL} ..."
-
-    if command -v curl >/dev/null 2>&1; then
-        curl -s -m 15 -D "$HEADERS_FILE" \
-            -H "ID: $MAC_ADDR" \
-            -H "Access-Token: $DEVICE_TOKEN" \
-            -o "$SCREEN_FILE" \
-            "$FETCH_URL"
-        FETCH_EXIT=$?
-    elif command -v wget >/dev/null 2>&1; then
-        wget -q -O "$SCREEN_FILE" -T 15 \
-            --header="ID: $MAC_ADDR" \
-            --header="Access-Token: $DEVICE_TOKEN" \
-            "$FETCH_URL"
-        FETCH_EXIT=$?
-    fi
-
-    if [ $FETCH_EXIT -eq 0 ] && [ -s "$SCREEN_FILE" ]; then
-        log "Image downloaded successfully ($(wc -c < "$SCREEN_FILE") bytes)."
-
-        # Parse dynamic Refresh-Rate header if available
-        if [ -f "$HEADERS_FILE" ]; then
-            SERVER_REFRESH="$(grep -i "Refresh-Rate:" "$HEADERS_FILE" 2>/dev/null | awk -F': ' '{print $2}' | tr -d '\r\n ')"
-            if [ -n "$SERVER_REFRESH" ] && [ "$SERVER_REFRESH" -gt 0 ] 2>/dev/null; then
-                INTERVAL="$SERVER_REFRESH"
-                log "Server requested Refresh-Rate: ${INTERVAL}s."
-            fi
-        fi
-
-        # ----------------------------------------------------------------------
-        # 7. Render Image to Screen
-        # ----------------------------------------------------------------------
-        if [ -n "$FOUND_FBINK" ]; then
-            log "Rendering image with fbink (rotation: $FBINK_ROTATION)..."
-            "$FOUND_FBINK" -q -g -c -r "$FBINK_ROTATION" "$SCREEN_FILE"
-        elif command -v eips >/dev/null 2>&1; then
-            log "Rendering image with native eips fallback..."
-            eips -c
-            eips -g "$SCREEN_FILE"
-        else
-            log "⚠️  No display tool found (neither fbink nor eips)!"
-        fi
-    else
-        log "⚠️  Failed to download display image (Exit: $FETCH_EXIT)."
-        if command -v eips >/dev/null 2>&1; then
-            eips 0 39 "TRMNL: Download failed from $SERVER_URL" 2>/dev/null || true
-        fi
-    fi
+if command -v curl >/dev/null 2>&1; then
+    curl -s -m 15 -o "$SCREEN_FILE" "$FETCH_URL"
+    FETCH_EXIT=$?
+else
+    # Simple, universally compatible busybox wget syntax
+    wget -q -O "$SCREEN_FILE" "$FETCH_URL"
+    FETCH_EXIT=$?
 fi
 
 # ------------------------------------------------------------------------------
-# 8. Low Battery Safeguard Overlay
+# 7. Render to Screen
 # ------------------------------------------------------------------------------
-if [ "$BATT_PERCENT" -le "$LOW_BATTERY_THRESHOLD" ] 2>/dev/null; then
-    log "CRITICAL BATTERY: ${BATT_PERCENT}%. Setting extended sleep."
-    INTERVAL="$CRITICAL_SLEEP_INTERVAL"
+if [ $FETCH_EXIT -eq 0 ] && [ -s "$SCREEN_FILE" ]; then
+    log "Image downloaded successfully ($(wc -c < "$SCREEN_FILE") bytes)."
+    
+    # Pause 1 second for KUAL to completely finish unmounting/closing
+    sleep 1
+
     if [ -n "$FOUND_FBINK" ]; then
-        "$FOUND_FBINK" -q -m -b -y -2 "⚠️ CRITICAL BATTERY: ${BATT_PERCENT}% - PLEASE RECHARGE"
+        log "Rendering image with fbink (rotation: $FBINK_ROTATION)..."
+        "$FOUND_FBINK" -q -g -c -r "$FBINK_ROTATION" "$SCREEN_FILE"
     elif command -v eips >/dev/null 2>&1; then
-        eips 0 39 "⚠️ CRITICAL BATTERY: ${BATT_PERCENT}% - PLEASE RECHARGE"
+        log "Rendering image with native eips..."
+        eips -c
+        sleep 1
+        eips -g "$SCREEN_FILE"
+    fi
+    log "Display update complete."
+else
+    log "⚠️  Failed to download image (Exit: $FETCH_EXIT)."
+    if command -v eips >/dev/null 2>&1; then
+        eips 0 38 "TRMNL Error: Could not reach server" 2>/dev/null || true
+        eips 0 39 "$SERVER_URL" 2>/dev/null || true
     fi
 fi
 
 # ------------------------------------------------------------------------------
-# 9. Power OFF Wi-Fi immediately to preserve battery
+# 8. Power OFF Wi-Fi to preserve battery
 # ------------------------------------------------------------------------------
-log "Disabling Wi-Fi to preserve battery..."
+log "Disabling Wi-Fi..."
 lipc-set-prop com.lab126.cmd wirelessEnable 0 2>/dev/null || true
 
 # ------------------------------------------------------------------------------
-# 10. Schedule RTC Wakeup Alarm and Enter Deep Sleep
+# 9. Deep Sleep (ONLY in background loop mode)
 # ------------------------------------------------------------------------------
-log "Scheduling RTC wake in ${INTERVAL}s and entering deep sleep..."
-
-# Try lipc rtcWakeup first (standard across Kindle Paperwhite & modern firmware)
-lipc-set-prop -i com.lab126.powerd rtcWakeup "$INTERVAL" 2>/dev/null || true
-
-# Try rtcwake fallback if device node exists
-if [ -e /dev/rtc1 ]; then
-    rtcwake -d /dev/rtc1 -m no -s "$INTERVAL" 2>/dev/null || true
-elif [ -e /dev/rtc0 ]; then
-    rtcwake -d /dev/rtc0 -m no -s "$INTERVAL" 2>/dev/null || true
+if [ $SLEEP_MODE -eq 1 ]; then
+    INTERVAL="$DEFAULT_INTERVAL"
+    log "Entering sleep for ${INTERVAL}s..."
+    lipc-set-prop -i com.lab126.powerd rtcWakeup "$INTERVAL" 2>/dev/null || true
+    echo "mem" > /sys/power/state
 fi
-
-# Suspend device to RAM (deep sleep)
-echo "mem" > /sys/power/state
