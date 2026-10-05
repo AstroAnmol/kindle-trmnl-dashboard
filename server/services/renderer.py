@@ -1,7 +1,7 @@
 import io
 import time
 import logging
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from PIL import Image, ImageDraw, ImageFont
 from server.config import settings
