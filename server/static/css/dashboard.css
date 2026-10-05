@@ -1,0 +1,439 @@
+/* ==========================================================================
+   TRMNL Monochrome Design System for Kindle E-Ink Displays
+   ========================================================================== */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+:root {
+    --bg-color: #ffffff;
+    --text-color: #000000;
+    --border-color: #000000;
+    --border-width: 2px;
+    --card-radius: 6px;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Liberation Sans", Helvetica, Arial, sans-serif;
+    --font-mono: "Courier New", Courier, monospace, "Liberation Mono";
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-sans);
+    overflow: hidden;
+}
+
+.dashboard-container {
+    width: 100%;
+    height: 100%;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-color: var(--bg-color);
+}
+
+/* ==========================================================================
+   1. Top Bar (Header)
+   ========================================================================== */
+
+.topbar-card {
+    height: 48px;
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--card-radius);
+    padding: 4px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+}
+
+.topbar-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.topbar-day {
+    font-size: 15px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+}
+
+.topbar-date {
+    font-size: 11px;
+    font-weight: 600;
+    color: #222222;
+    line-height: 1.1;
+}
+
+.topbar-center {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.topbar-clock {
+    font-size: 26px;
+    font-weight: 900;
+    font-family: var(--font-mono);
+    letter-spacing: -1px;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.device-metric {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.metric-icon {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.metric-icon svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+}
+
+/* ==========================================================================
+   2. Main Grid Layout (60% Left, 40% Right)
+   ========================================================================== */
+
+.main-content {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+    min-height: 0;
+}
+
+.left-column {
+    flex: 0 0 60%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.right-column {
+    flex: 0 0 calc(40% - 8px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+/* Common Card Style */
+.card {
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--card-radius);
+    background: #ffffff;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 6px;
+}
+
+.card-title {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.card-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    background: #000000;
+    color: #ffffff;
+    border-radius: 10px;
+}
+
+/* ==========================================================================
+   3. Weather Banner
+   ========================================================================== */
+
+.weather-card {
+    height: 105px;
+    flex-shrink: 0;
+    padding: 6px 10px;
+}
+
+.weather-banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.weather-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.weather-main-icon {
+    width: 54px;
+    height: 54px;
+}
+
+.weather-main-icon svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+}
+
+.weather-temp-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.weather-temp {
+    font-size: 38px;
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: -1px;
+}
+
+.weather-condition {
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 3px;
+}
+
+.weather-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+}
+
+.weather-hilow {
+    font-size: 14px;
+    font-weight: 800;
+    display: flex;
+    gap: 8px;
+}
+
+.weather-pill {
+    font-size: 11px;
+    font-weight: 700;
+    color: #333333;
+}
+
+.weather-details-grid {
+    display: flex;
+    gap: 10px;
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   4. Calendar Agenda Card
+   ========================================================================== */
+
+.calendar-card {
+    flex: 1;
+    overflow: hidden;
+}
+
+.events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow: hidden;
+}
+
+.event-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 3px 0;
+    border-bottom: 1px dashed #777777;
+}
+
+.event-row:last-child {
+    border-bottom: none;
+}
+
+.event-time-badge {
+    font-size: 11px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    padding: 1px 5px;
+    background: #eeeeee;
+    border: 1px solid #000000;
+    border-radius: 3px;
+}
+
+.event-time-badge.all-day {
+    background: #000000;
+    color: #ffffff;
+}
+
+.event-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.event-title {
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+
+.event-meta {
+    font-size: 10px;
+    color: #444444;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.section-subhead {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555555;
+    margin-top: 4px;
+    margin-bottom: 2px;
+}
+
+/* ==========================================================================
+   5. Tasks & Checklist Card
+   ========================================================================== */
+
+.tasks-card {
+    flex: 1;
+    overflow: hidden;
+}
+
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow: hidden;
+}
+
+.task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.task-checkbox {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #000000;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.task-checkbox.checked {
+    background-color: #000000;
+}
+
+.task-checkbox.checked svg {
+    width: 10px;
+    height: 10px;
+    fill: #ffffff;
+}
+
+.task-text {
+    flex: 1;
+    word-break: break-word;
+}
+
+.task-item.completed .task-text {
+    text-decoration: line-through;
+    color: #666666;
+}
+
+/* ==========================================================================
+   6. Quick Stats / Notes Card
+   ========================================================================== */
+
+.stats-card {
+    height: 110px;
+    flex-shrink: 0;
+    padding: 6px 10px;
+}
+
+.notes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #222222;
+}
+
+.note-item {
+    display: flex;
+    gap: 4px;
+    line-height: 1.2;
+}
+
+.note-bullet {
+    font-weight: 900;
+}
+
+.footer-info {
+    margin-top: auto;
+    padding-top: 4px;
+    border-top: 1px solid #cccccc;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #555555;
+}

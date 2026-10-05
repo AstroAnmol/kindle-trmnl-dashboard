@@ -1,0 +1,50 @@
+{# Monochrome SVG Icon Definitions #}
+{% macro icon_weather(name) %}
+{% if name == "sun" %}
+<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+{% elif name in ["sun-cloud", "partly-cloudy"] %}
+<svg viewBox="0 0 24 24"><circle cx="10" cy="8" r="3" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M10 2v2M4.3 4.3l1.4 1.4M2 10h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7 19h11a4 4 0 0 0 0-8 5.5 5.5 0 0 0-5.4-4.5A5.5 5.5 0 0 0 7 11a4 4 0 0 0 0 8z" fill="currentColor"/></svg>
+{% elif name == "cloudy" %}
+<svg viewBox="0 0 24 24"><path d="M6 19h12a4 4 0 0 0 0-8 5.5 5.5 0 0 0-5.4-4.5A5.5 5.5 0 0 0 6 11a4 4 0 0 0 0 8z" fill="currentColor"/></svg>
+{% elif name == "fog" %}
+<svg viewBox="0 0 24 24"><path d="M6 14h12a4 4 0 0 0 0-7 5.5 5.5 0 0 0-5.4-4 5.5 5.5 0 0 0-6.6 4.5A4 4 0 0 0 6 14z" fill="currentColor"/><path d="M3 17h18M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+{% elif name in ["rain", "heavy-rain"] %}
+<svg viewBox="0 0 24 24"><path d="M6 15h12a4 4 0 0 0 0-8 5.5 5.5 0 0 0-5.4-4.5A5.5 5.5 0 0 0 6 7a4 4 0 0 0 0 8z" fill="currentColor"/><path d="M8 17l-1.5 4M12 17l-1.5 4M16 17l-1.5 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+{% elif name == "drizzle" %}
+<svg viewBox="0 0 24 24"><path d="M6 15h12a4 4 0 0 0 0-8 5.5 5.5 0 0 0-5.4-4.5A5.5 5.5 0 0 0 6 7a4 4 0 0 0 0 8z" fill="currentColor"/><path d="M9 17v2M13 17v2M17 17v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+{% elif name in ["snow", "heavy-snow", "sleet"] %}
+<svg viewBox="0 0 24 24"><path d="M6 15h12a4 4 0 0 0 0-8 5.5 5.5 0 0 0-5.4-4.5A5.5 5.5 0 0 0 6 7a4 4 0 0 0 0 8z" fill="currentColor"/><circle cx="8" cy="18" r="1.2" fill="currentColor"/><circle cx="12" cy="20" r="1.2" fill="currentColor"/><circle cx="16" cy="18" r="1.2" fill="currentColor"/></svg>
+{% elif name == "thunderstorm" %}
+<svg viewBox="0 0 24 24"><path d="M6 14h12a4 4 0 0 0 0-8 5.5 5.5 0 0 0-5.4-4.5A5.5 5.5 0 0 0 6 6a4 4 0 0 0 0 8z" fill="currentColor"/><polygon points="13 12 10 17 13 17 11 22 16 16 13 16" fill="currentColor"/></svg>
+{% else %}
+<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+{% endif %}
+{% endmacro %}
+
+{% macro icon_battery(icon_name) %}
+{% if icon_name == "battery-full" %}
+<svg viewBox="0 0 24 24"><rect x="2" y="6" width="17" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><rect x="4" y="8" width="13" height="8" rx="1" fill="currentColor"/><path d="M21 10v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+{% elif icon_name == "battery-three-quarters" %}
+<svg viewBox="0 0 24 24"><rect x="2" y="6" width="17" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><rect x="4" y="8" width="9.5" height="8" rx="1" fill="currentColor"/><path d="M21 10v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+{% elif icon_name == "battery-half" %}
+<svg viewBox="0 0 24 24"><rect x="2" y="6" width="17" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><rect x="4" y="8" width="6.5" height="8" rx="1" fill="currentColor"/><path d="M21 10v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+{% elif icon_name == "battery-quarter" %}
+<svg viewBox="0 0 24 24"><rect x="2" y="6" width="17" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><rect x="4" y="8" width="3.5" height="8" rx="1" fill="currentColor"/><path d="M21 10v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+{% else %}
+<svg viewBox="0 0 24 24"><rect x="2" y="6" width="17" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M10 9v3M10 14v1M21 10v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+{% endif %}
+{% endmacro %}
+
+{% macro icon_wifi(bars) %}
+{% if bars >= 4 %}
+<svg viewBox="0 0 24 24"><path d="M1 9a17 17 0 0 1 22 0M4 12.5a13 13 0 0 1 16 0M7.5 16a8.5 8.5 0 0 1 9 0M11 19.5a1.5 1.5 0 1 1 2 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+{% elif bars == 3 %}
+<svg viewBox="0 0 24 24"><path d="M4 12.5a13 13 0 0 1 16 0M7.5 16a8.5 8.5 0 0 1 9 0M11 19.5a1.5 1.5 0 1 1 2 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+{% elif bars == 2 %}
+<svg viewBox="0 0 24 24"><path d="M7.5 16a8.5 8.5 0 0 1 9 0M11 19.5a1.5 1.5 0 1 1 2 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+{% elif bars == 1 %}
+<svg viewBox="0 0 24 24"><path d="M11 19.5a1.5 1.5 0 1 1 2 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+{% else %}
+<svg viewBox="0 0 24 24"><line x1="2" y1="2" x2="22" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="19.5" r="1.5" fill="currentColor"/></svg>
+{% endif %}
+{% endmacro %}

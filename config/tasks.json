@@ -1,0 +1,7 @@
+[
+  {"text": "Complete Kindle TRMNL dashboard setup", "completed": false, "due": "Today"},
+  {"text": "Review upcoming week calendar events", "completed": false, "due": "Today"},
+  {"text": "Configure Open-Meteo weather coordinates", "completed": true, "due": "Done"},
+  {"text": "Charge Kindle e-reader battery", "completed": false, "due": "Tomorrow"},
+  {"text": "Water indoor plants", "completed": false, "due": "This week"}
+]

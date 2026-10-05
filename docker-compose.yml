@@ -1,0 +1,31 @@
+services:
+  kindle-trmnl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kindle-trmnl-dashboard
+    restart: unless-stopped
+    ports:
+      - "5055:5055"
+    volumes:
+      # Mount ./config for persistence: .env, tasks.md, device telemetry
+      - ./config:/app/config
+    env_file:
+      - path: ./config/.env
+        required: false
+      - path: .env
+        required: false
+    environment:
+      - PORT=5055
+      - HOST=0.0.0.0
+      - REFRESH_RATE_SECONDS=${REFRESH_RATE_SECONDS:-900}
+      - ICAL_URLS=${ICAL_URLS:-}
+      - LATITUDE=${LATITUDE:-40.7128}
+      - LONGITUDE=${LONGITUDE:--74.0060}
+      - TIMEZONE=${TIMEZONE:-America/New_York}
+      - KINDLE_SCREEN_WIDTH=${KINDLE_SCREEN_WIDTH:-800}
+      - KINDLE_SCREEN_HEIGHT=${KINDLE_SCREEN_HEIGHT:-480}
+      - IMAGE_FORMAT=${IMAGE_FORMAT:-png}
+      - COLOR_MODE=${COLOR_MODE:-1bit}
+      - DITHERING=${DITHERING:-true}
+      - CELSIUS=${CELSIUS:-false}

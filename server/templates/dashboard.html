@@ -1,0 +1,201 @@
+{% import "partials/icons.html" as icons %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width={{ width }}, height={{ height }}, initial-scale=1.0">
+    <title>Kindle TRMNL Dashboard</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <style>
+        /* Exact Viewport Constraints for Headless Capture */
+        body {
+            width: {{ width }}px;
+            height: {{ height }}px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        
+        <!-- ================================================================
+             1. Top Bar: Day, Date, Large Clock, Battery, Wi-Fi
+             ================================================================ -->
+        <header class="topbar-card">
+            <div class="topbar-left">
+                <div class="topbar-day">{{ now_day }}</div>
+                <div class="topbar-date">{{ now_date }}</div>
+            </div>
+
+            <div class="topbar-center">
+                <div class="topbar-clock">{{ now_time }}</div>
+            </div>
+
+            <div class="topbar-right">
+                <div class="device-metric" title="Kindle Wi-Fi Signal">
+                    <span class="metric-icon">
+                        {{ icons.icon_wifi(telemetry.wifi_bars) }}
+                    </span>
+                    <span>{{ telemetry.signal_strength }} dBm</span>
+                </div>
+
+                <div class="device-metric" title="Kindle Battery Level">
+                    <span class="metric-icon">
+                        {{ icons.icon_battery(telemetry.battery_icon) }}
+                    </span>
+                    <span>{{ telemetry.battery_percent }}%</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ================================================================
+             2. Main Grid: Left Column (60%), Right Column (40%)
+             ================================================================ -->
+        <main class="main-content">
+            
+            <!-- Left Column: Weather Banner + Calendar Agenda -->
+            <section class="left-column">
+                
+                <!-- Weather Banner Card -->
+                <div class="card weather-card">
+                    <div class="weather-banner-content">
+                        <div class="weather-left">
+                            <div class="weather-main-icon">
+                                {{ icons.icon_weather(weather.icon) }}
+                            </div>
+                            <div class="weather-temp-group">
+                                <div class="weather-temp">{{ weather.temperature }}{{ weather.unit }}</div>
+                                <div class="weather-condition">{{ weather.condition }}</div>
+                            </div>
+                        </div>
+
+                        <div class="weather-right">
+                            <div class="weather-hilow">
+                                <span>&darr; {{ weather.temp_min }}{{ weather.unit }}</span>
+                                <span>&uarr; {{ weather.temp_max }}{{ weather.unit }}</span>
+                            </div>
+                            <div class="weather-pill">{{ weather.location }}</div>
+                            <div class="weather-details-grid">
+                                <span>Rain: {{ weather.precipitation_probability }}%</span>
+                                <span>Hum: {{ weather.humidity }}%</span>
+                                <span>Wind: {{ weather.wind_speed }} {{ "mph" if weather.unit == "°F" else "km/h" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Agenda Card -->
+                <div class="card calendar-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>Today's Agenda</span>
+                        </div>
+                        <span class="card-badge">{{ calendar.today | length }} Events</span>
+                    </div>
+
+                    <div class="events-list">
+                        {% if calendar.today %}
+                            {% for ev in calendar.today[:4] %}
+                                <div class="event-row">
+                                    <div class="event-time-badge {{ 'all-day' if ev.all_day else '' }}">
+                                        {{ ev.time }}
+                                    </div>
+                                    <div class="event-info">
+                                        <div class="event-title">{{ ev.title }}</div>
+                                        {% if ev.location %}
+                                            <div class="event-meta">&bull; {{ ev.location }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="event-row">
+                                <div class="event-time-badge all-day">All Day</div>
+                                <div class="event-info">
+                                    <div class="event-title">No events scheduled for today</div>
+                                    <div class="event-meta">Enjoy your clear schedule!</div>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if calendar.tomorrow %}
+                            <div class="section-subhead">Tomorrow</div>
+                            {% for ev in calendar.tomorrow[:2] %}
+                                <div class="event-row">
+                                    <div class="event-time-badge {{ 'all-day' if ev.all_day else '' }}">
+                                        {{ ev.time }}
+                                    </div>
+                                    <div class="event-info">
+                                        <div class="event-title">{{ ev.title }}</div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- Right Column: Tasks Checklist + Quick Stats/Notes -->
+            <section class="right-column">
+                
+                <!-- Tasks Checklist Card -->
+                <div class="card tasks-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>Tasks & Focus</span>
+                        </div>
+                        <span class="card-badge">{{ tasks.completed_count }}/{{ tasks.total }} Done</span>
+                    </div>
+
+                    <div class="task-list">
+                        {% for task in tasks.tasks[:6] %}
+                            <div class="task-item {{ 'completed' if task.completed else '' }}">
+                                <div class="task-checkbox {{ 'checked' if task.completed else '' }}">
+                                    {% if task.completed %}
+                                        <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                                    {% endif %}
+                                </div>
+                                <div class="task-text">{{ task.text }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Quick Stats & Notes Card -->
+                <div class="card stats-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>Quick Notes</span>
+                        </div>
+                        <span class="card-badge">Notes</span>
+                    </div>
+
+                    <div class="notes-list">
+                        {% if tasks.notes %}
+                            {% for note in tasks.notes[:3] %}
+                                <div class="note-item">
+                                    <span class="note-bullet">&bull;</span>
+                                    <span>{{ note }}</span>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="note-item">
+                                <span class="note-bullet">&bull;</span>
+                                <span>Keep Kindle in Wi-Fi range for updates.</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="footer-info">
+                        <span>Updated: {{ last_updated }}</span>
+                        <span>Kindle TRMNL</span>
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+</body>
+</html>
