@@ -50,7 +50,6 @@ def _fetch_google_keep_tasks() -> Optional[Dict[str, Any]]:
         ]
 
         if not matched_notes:
-            # If no exact title match, search for pinned list notes
             matched_notes = [n for n in _keep_instance.all() if n.pinned and isinstance(n, gkeepapi.node.List)]
 
         if not matched_notes:
@@ -59,9 +58,7 @@ def _fetch_google_keep_tasks() -> Optional[Dict[str, Any]]:
 
         note = matched_notes[0]
         tasks: List[Dict[str, Any]] = []
-        notes_list: List[str] = []
 
-        # Extract list items
         if isinstance(note, gkeepapi.node.List):
             for item in note.items:
                 if item.text:
@@ -70,7 +67,6 @@ def _fetch_google_keep_tasks() -> Optional[Dict[str, Any]]:
                         "completed": bool(item.checked)
                     })
         elif hasattr(note, "text") and note.text:
-            # Text note fallback: parse markdown-style checkboxes
             return _parse_markdown_tasks(note.text)
 
         completed_count = sum(1 for t in tasks if t.get("completed"))
@@ -137,7 +133,8 @@ def _parse_markdown_tasks(content: str) -> Dict[str, Any]:
         "completed_count": completed_count,
         "pending_count": pending_count,
         "total": len(tasks),
-        "source": "local_markdown"
+        "source": "local_markdown",
+        "raw_markdown": content
     }
 
 def _parse_json_tasks(content: str) -> Dict[str, Any]:
@@ -159,7 +156,8 @@ def _parse_json_tasks(content: str) -> Dict[str, Any]:
                 "completed_count": completed_count,
                 "pending_count": len(tasks) - completed_count,
                 "total": len(tasks),
-                "source": "local_json"
+                "source": "local_json",
+                "raw_markdown": ""
             }
     except Exception as e:
         logger.error(f"Error parsing JSON tasks: {e}")
@@ -170,8 +168,130 @@ def _parse_json_tasks(content: str) -> Dict[str, Any]:
         "completed_count": 1,
         "pending_count": 4,
         "total": 5,
-        "source": "default"
+        "source": "default",
+        "raw_markdown": ""
     }
+
+def get_raw_tasks_file() -> str:
+    task_file = settings.tasks_file_path
+    if os.path.exists(task_file):
+        try:
+            with open(task_file, "r", encoding="utf-8") as f:
+                return f.read()
+        except Exception:
+            pass
+    return "# Daily Focus & Tasks\n\n- [ ] Example task\n\n# Quick Notes\n- Example note\n"
+
+def save_raw_tasks_markdown(content: str) -> bool:
+    task_file = settings.tasks_file_path
+    try:
+        os.makedirs(os.path.dirname(task_file), exist_ok=True)
+        with open(task_file, "w", encoding="utf-8") as f:
+            f.write(content)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to write task file: {e}")
+        return False
+
+def toggle_task_in_file(task_index: int) -> bool:
+    """Toggles completion state of the n-th checkbox task in config/tasks.md."""
+    task_file = settings.tasks_file_path
+    if not os.path.exists(task_file):
+        return False
+
+    with open(task_file, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    current_idx = 0
+    modified = False
+    new_lines = []
+
+    for line in lines:
+        match = re.match(r"^(\s*[-*]\s*\[)([ xX])(\]\s*.*)$", line)
+        if match:
+            if current_idx == task_index:
+                old_state = match.group(2).lower()
+                new_state = " " if old_state == "x" else "x"
+                line = f"{match.group(1)}{new_state}{match.group(3)}\n"
+                modified = True
+            current_idx += 1
+        new_lines.append(line)
+
+    if modified:
+        with open(task_file, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+    return modified
+
+def add_task_to_file(task_text: str) -> bool:
+    """Adds a new unchecked task to config/tasks.md."""
+    task_file = settings.tasks_file_path
+    task_line = f"- [ ] {task_text.strip()}\n"
+
+    if not os.path.exists(task_file):
+        content = f"# Daily Focus & Tasks\n\n{task_line}\n# Quick Notes\n"
+        return save_raw_tasks_markdown(content)
+
+    with open(task_file, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    # Insert under the tasks header or before # Quick Notes
+    insert_pos = len(lines)
+    for idx, line in enumerate(lines):
+        if line.strip().lower().startswith("# quick notes") or line.strip().lower().startswith("# notes"):
+            insert_pos = idx
+            break
+
+    lines.insert(insert_pos, task_line)
+
+    with open(task_file, "w", encoding="utf-8") as f:
+        f.writelines(lines)
+    return True
+
+def delete_task_from_file(task_index: int) -> bool:
+    """Deletes the n-th task from config/tasks.md."""
+    task_file = settings.tasks_file_path
+    if not os.path.exists(task_file):
+        return False
+
+    with open(task_file, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    current_idx = 0
+    modified = False
+    new_lines = []
+
+    for line in lines:
+        if re.match(r"^\s*[-*]\s*\[([ xX])\]\s*", line):
+            if current_idx == task_index:
+                modified = True
+                current_idx += 1
+                continue
+            current_idx += 1
+        new_lines.append(line)
+
+    if modified:
+        with open(task_file, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+    return modified
+
+def add_note_to_file(note_text: str) -> bool:
+    """Appends a quick note to config/tasks.md."""
+    task_file = settings.tasks_file_path
+    note_line = f"- {note_text.strip()}\n"
+
+    if not os.path.exists(task_file):
+        content = f"# Daily Focus & Tasks\n\n# Quick Notes\n{note_line}"
+        return save_raw_tasks_markdown(content)
+
+    with open(task_file, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    if "# Quick Notes" not in content and "# quick notes" not in content.lower():
+        content += f"\n# Quick Notes\n{note_line}"
+    else:
+        content += f"{note_line}"
+
+    return save_raw_tasks_markdown(content)
 
 def fetch_tasks_and_notes() -> Dict[str, Any]:
     # 1. Attempt Google Keep fetch if configured
@@ -209,5 +329,6 @@ def fetch_tasks_and_notes() -> Dict[str, Any]:
         "completed_count": 1,
         "pending_count": 4,
         "total": 5,
-        "source": "default"
+        "source": "default",
+        "raw_markdown": ""
     }

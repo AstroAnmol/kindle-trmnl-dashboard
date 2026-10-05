@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,50 +6,78 @@
     <title>Kindle TRMNL Preview & Control</title>
     <style>
         :root {
-            --bg: #121212;
-            --surface: #1e1e1e;
+            --bg: #111418;
+            --surface: #1a1f26;
+            --surface-hover: #242b35;
+            --border: #2d3748;
             --primary: #ffffff;
-            --text-secondary: #a0a0a0;
-            --border: #333333;
+            --primary-accent: #3b82f6;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --success: #10b981;
+            --danger: #ef4444;
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: var(--bg);
-            color: #ffffff;
+            color: var(--text-primary);
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 24px;
+            padding: 20px;
             min-height: 100vh;
         }
+
         header {
             width: 100%;
-            max-width: 900px;
+            max-width: 960px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
-        h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .badge {
-            background: #2e7d32;
+            background: var(--success);
             color: #ffffff;
             font-size: 11px;
             padding: 2px 8px;
             border-radius: 12px;
             font-weight: 600;
         }
+
         .nav-links a {
             color: var(--text-secondary);
             text-decoration: none;
             margin-left: 16px;
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 500;
             transition: color 0.2s;
         }
         .nav-links a:hover { color: #ffffff; }
+
+        .preview-container {
+            width: 100%;
+            max-width: 960px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Kindle Bezel */
         .preview-wrapper {
-            background: #252525;
+            background: var(--surface);
             padding: 16px;
             border-radius: 12px;
             border: 1px solid var(--border);
@@ -58,47 +86,218 @@
             flex-direction: column;
             align-items: center;
         }
+
         .bezel {
-            border: 12px solid #000000;
+            border: 14px solid #000000;
             border-radius: 8px;
             background: #ffffff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.6);
             overflow: hidden;
             display: inline-block;
+            max-width: 100%;
         }
+
         .bezel img {
             display: block;
             max-width: 100%;
             height: auto;
             image-rendering: pixelated;
         }
+
         .controls {
-            margin-top: 16px;
+            margin-top: 14px;
             display: flex;
-            gap: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
             align-items: center;
+            justify-content: center;
+            width: 100%;
         }
-        button {
+
+        .btn {
             background: #ffffff;
             color: #000000;
             border: none;
-            padding: 8px 16px;
+            padding: 8px 14px;
             font-size: 13px;
             font-weight: 600;
             border-radius: 6px;
             cursor: pointer;
-            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: opacity 0.2s, transform 0.1s;
         }
-        button:hover { opacity: 0.85; }
+        .btn:hover { opacity: 0.9; }
+        .btn:active { transform: scale(0.98); }
+        .btn-secondary {
+            background: var(--surface-hover);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { background: #2f3844; }
+
         .status-pill {
             font-size: 12px;
             color: var(--text-secondary);
+            margin-left: auto;
+        }
+
+        /* Collapsible Panels */
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px;
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .panel.active { display: flex; }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .panel-title {
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+        .tab-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+        .tab-btn.active {
+            background: var(--surface-hover);
+            color: #ffffff;
+        }
+
+        /* Tasks Interactive UI */
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 280px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: var(--surface-hover);
+            border-radius: 6px;
+            border: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .task-item:hover { border-color: var(--border); }
+        .task-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .task-text {
+            flex: 1;
+            font-size: 14px;
+        }
+        .task-text.completed {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+        }
+        .btn-delete {
+            background: transparent;
+            color: var(--danger);
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .btn-delete:hover { background: rgba(239,68,68,0.2); }
+
+        .add-row {
+            display: flex;
+            gap: 8px;
+        }
+        .input-text {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: #ffffff;
+            padding: 8px 12px;
+            font-size: 13px;
+            outline: none;
+        }
+        .input-text:focus { border-color: var(--primary-accent); }
+
+        .editor-textarea {
+            width: 100%;
+            height: 220px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: #f3f4f6;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: vertical;
+            outline: none;
+        }
+        .editor-textarea:focus { border-color: var(--primary-accent); }
+
+        .help-callout {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 6px;
+            padding: 12px 14px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #93c5fd;
+        }
+        .help-callout code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: #ffffff;
+        }
+
+        .alert-success {
+            padding: 8px 12px;
+            background: rgba(16,185,129,0.15);
+            border: 1px solid var(--success);
+            color: #6ee7b7;
+            border-radius: 6px;
+            font-size: 12px;
+            display: none;
         }
     </style>
 </head>
 <body>
+
     <header>
-        <h1>Kindle TRMNL Dashboard <span class="badge">Self-Hosted</span></h1>
+        <h1>📟 Kindle TRMNL Dashboard <span class="badge">Self-Hosted</span></h1>
         <div class="nav-links">
             <a href="/api/display" target="_blank">Raw Image</a>
             <a href="/api/data" target="_blank">JSON Context</a>
@@ -106,29 +305,329 @@
         </div>
     </header>
 
-    <div class="preview-wrapper">
-        <div class="bezel">
-            <img id="dashboard-img" src="/api/display?t={{ cache_bust }}" alt="Kindle Dashboard Display" width="{{ width }}" height="{{ height }}">
+    <div class="preview-container">
+        
+        <!-- Live Image Display -->
+        <div class="preview-wrapper">
+            <div class="bezel">
+                <img id="dashboard-img" src="/api/display?t={{ cache_bust }}" alt="Kindle Dashboard Display" width="{{ width }}" height="{{ height }}">
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="refreshImage()">
+                    <span>🔄 Refresh Display</span>
+                </button>
+                <button class="btn btn-secondary" onclick="togglePanel('tasks-panel')">
+                    <span>✏️ Manage Tasks & Notes</span>
+                </button>
+                <button class="btn btn-secondary" onclick="togglePanel('calendar-panel')">
+                    <span>📅 Configure Calendar</span>
+                </button>
+                <span class="status-pill" id="status-text">Kindle WP63GW ({{ width }}x{{ height }}) | Auto-refresh: 60s</span>
+            </div>
         </div>
 
-        <div class="controls">
-            <button onclick="refreshImage()">Refresh Display</button>
-            <span class="status-pill" id="status-text">Dimensions: {{ width }}x{{ height }} | Auto-refresh: 60s</span>
+        <!-- Notification Banner -->
+        <div id="alert-banner" class="alert-success"></div>
+
+        <!-- Interactive Tasks & Notes Management Panel -->
+        <div id="tasks-panel" class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span>📝 Manage Tasks & Notes</span>
+                </div>
+                <button class="btn-secondary" style="padding: 4px 8px; border-radius: 4px; cursor: pointer;" onclick="togglePanel('tasks-panel')">✕ Close</button>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTaskTab('checklist')">Checklist View</button>
+                <button class="tab-btn" onclick="switchTaskTab('markdown')">Raw Markdown Editor</button>
+            </div>
+
+            <!-- Tab 1: Interactive Checklist -->
+            <div id="tab-checklist" style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="task-list" id="task-items-container">
+                    <div style="color: var(--text-secondary); font-size: 13px;">Loading tasks...</div>
+                </div>
+
+                <div class="add-row">
+                    <input type="text" id="new-task-input" class="input-text" placeholder="Type a new task and press Enter..." onkeydown="if(event.key==='Enter') addTask()">
+                    <button class="btn" onclick="addTask()">Add Task</button>
+                </div>
+
+                <div style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 6px;">
+                    <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px;">Quick Notes / Reminders</div>
+                    <div id="notes-container" style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; font-size: 13px; color: var(--text-secondary);"></div>
+                    <div class="add-row">
+                        <input type="text" id="new-note-input" class="input-text" placeholder="Add a quick note bullet..." onkeydown="if(event.key==='Enter') addNote()">
+                        <button class="btn btn-secondary" onclick="addNote()">Add Note</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Raw Markdown Editor -->
+            <div id="tab-markdown" style="display: none; flex-direction: column; gap: 10px;">
+                <textarea id="raw-markdown-editor" class="editor-textarea" placeholder="Edit tasks.md directly..."></textarea>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button class="btn" onclick="saveRawMarkdown()">💾 Save Markdown & Refresh</button>
+                </div>
+            </div>
         </div>
+
+        <!-- Google Calendar Configuration Panel -->
+        <div id="calendar-panel" class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span>📅 Google Calendar Feeds</span>
+                </div>
+                <button class="btn-secondary" style="padding: 4px 8px; border-radius: 4px; cursor: pointer;" onclick="togglePanel('calendar-panel')">✕ Close</button>
+            </div>
+
+            <div class="help-callout">
+                <strong>How to get your Google Calendar private URL:</strong><br>
+                1. Open <a href="https://calendar.google.com" target="_blank" style="color: #ffffff; text-decoration: underline;">Google Calendar</a> on your computer.<br>
+                2. On the left sidebar, hover over your calendar, click <code>⋮</code> ➜ <strong>Settings and sharing</strong>.<br>
+                3. Scroll down to <strong>Integrate calendar</strong> and copy the <strong>"Secret address in iCal format"</strong> (ends with <code>/basic.ics</code>).<br>
+                4. Paste the URL below and click <strong>Save & Sync</strong>!
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="font-size: 13px; font-weight: 600;">iCal URLs (comma-separated for multiple feeds):</label>
+                <textarea id="ical-url-input" class="editor-textarea" style="height: 90px;" placeholder="https://calendar.google.com/calendar/ical/.../basic.ics">{{ ical_urls }}</textarea>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span id="cal-status-text" style="font-size: 12px; color: var(--text-secondary);">Status: Checking...</span>
+                <button class="btn" onclick="saveCalendar()">💾 Save & Sync Calendar</button>
+            </div>
+        </div>
+
     </div>
 
     <script>
         function refreshImage() {
             const img = document.getElementById('dashboard-img');
             const status = document.getElementById('status-text');
-            status.textContent = "Updating...";
-            img.src = '/api/display?t=' + new Date().getTime();
+            status.textContent = "Updating display image...";
+            img.src = '/api/display?force=true&t=' + new Date().getTime();
             img.onload = () => {
                 status.textContent = "Updated at " + new Date().toLocaleTimeString();
             };
         }
-        // Auto refresh every 60 seconds
         setInterval(refreshImage, 60000);
+
+        function showAlert(msg) {
+            const b = document.getElementById('alert-banner');
+            b.textContent = msg;
+            b.style.display = 'block';
+            setTimeout(() => { b.style.display = 'none'; }, 4000);
+        }
+
+        function togglePanel(panelId) {
+            const p = document.getElementById(panelId);
+            const isOpen = p.classList.contains('active');
+            document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+            if (!isOpen) {
+                p.classList.add('active');
+                if (panelId === 'tasks-panel') loadTasks();
+                if (panelId === 'calendar-panel') checkCalendarStatus();
+            }
+        }
+
+        function switchTaskTab(tab) {
+            const tabChecklist = document.getElementById('tab-checklist');
+            const tabMarkdown = document.getElementById('tab-markdown');
+            const btns = document.querySelectorAll('.tab-btn');
+
+            if (tab === 'checklist') {
+                tabChecklist.style.display = 'flex';
+                tabMarkdown.style.display = 'none';
+                btns[0].classList.add('active');
+                btns[1].classList.remove('active');
+                loadTasks();
+            } else {
+                tabChecklist.style.display = 'none';
+                tabMarkdown.style.display = 'flex';
+                btns[0].classList.remove('active');
+                btns[1].classList.add('active');
+            }
+        }
+
+        async function loadTasks() {
+            try {
+                const res = await fetch('/api/tasks');
+                const data = await res.json();
+                
+                document.getElementById('raw-markdown-editor').value = data.raw_markdown || '';
+
+                const container = document.getElementById('task-items-container');
+                container.innerHTML = '';
+
+                if (!data.tasks || data.tasks.length === 0) {
+                    container.innerHTML = '<div style="color: var(--text-secondary); font-size: 13px;">No tasks. Add one below!</div>';
+                } else {
+                    data.tasks.forEach((t, idx) => {
+                        const row = document.createElement('div');
+                        row.className = 'task-item';
+                        row.innerHTML = `
+                            <input type="checkbox" class="task-checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask(${idx})">
+                            <span class="task-text ${t.completed ? 'completed' : ''}">${escapeHtml(t.text)}</span>
+                            <button class="btn-delete" title="Delete Task" onclick="deleteTask(${idx})">✕</button>
+                        `;
+                        container.appendChild(row);
+                    });
+                }
+
+                const notesContainer = document.getElementById('notes-container');
+                notesContainer.innerHTML = '';
+                if (data.notes && data.notes.length > 0) {
+                    data.notes.forEach(n => {
+                        const noteDiv = document.createElement('div');
+                        noteDiv.textContent = '• ' + n;
+                        notesContainer.appendChild(noteDiv);
+                    });
+                } else {
+                    notesContainer.innerHTML = '<div>No quick notes recorded.</div>';
+                }
+            } catch (err) {
+                console.error("Failed to load tasks:", err);
+            }
+        }
+
+        async function toggleTask(idx) {
+            try {
+                await fetch('/api/tasks/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ index: idx })
+                });
+                await loadTasks();
+                refreshImage();
+                showAlert("Task updated!");
+            } catch (err) {
+                alert("Failed to toggle task: " + err);
+            }
+        }
+
+        async function addTask() {
+            const input = document.getElementById('new-task-input');
+            const text = input.value.trim();
+            if (!text) return;
+            try {
+                await fetch('/api/tasks/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                input.value = '';
+                await loadTasks();
+                refreshImage();
+                showAlert("Task added!");
+            } catch (err) {
+                alert("Failed to add task: " + err);
+            }
+        }
+
+        async function deleteTask(idx) {
+            if (!confirm("Delete this task?")) return;
+            try {
+                await fetch('/api/tasks/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ index: idx })
+                });
+                await loadTasks();
+                refreshImage();
+                showAlert("Task deleted!");
+            } catch (err) {
+                alert("Failed to delete task: " + err);
+            }
+        }
+
+        async function addNote() {
+            const input = document.getElementById('new-note-input');
+            const note = input.value.trim();
+            if (!note) return;
+            try {
+                await fetch('/api/notes/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ note })
+                });
+                input.value = '';
+                await loadTasks();
+                refreshImage();
+                showAlert("Note added!");
+            } catch (err) {
+                alert("Failed to add note: " + err);
+            }
+        }
+
+        async function saveRawMarkdown() {
+            const md = document.getElementById('raw-markdown-editor').value;
+            try {
+                await fetch('/api/tasks/raw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ markdown: md })
+                });
+                showAlert("Markdown tasks saved!");
+                refreshImage();
+            } catch (err) {
+                alert("Failed to save markdown: " + err);
+            }
+        }
+
+        async function checkCalendarStatus() {
+            const statusEl = document.getElementById('cal-status-text');
+            statusEl.textContent = "Checking calendar connection...";
+            try {
+                const res = await fetch('/api/data');
+                const data = await res.json();
+                const cal = data.calendar || {};
+                if (cal.is_sample) {
+                    statusEl.textContent = "⚠️ Showing SAMPLE events (no real feed configured).";
+                    statusEl.style.color = "#f59e0b";
+                } else if (cal.status === 'connected') {
+                    statusEl.textContent = `✅ Connected (${cal.total_count || 0} events scheduled today/tomorrow).`;
+                    statusEl.style.color = "#10b981";
+                } else {
+                    statusEl.textContent = `Status: ${cal.status || 'Active'}`;
+                }
+            } catch (err) {
+                statusEl.textContent = "Could not check calendar status.";
+            }
+        }
+
+        async function saveCalendar() {
+            const urls = document.getElementById('ical-url-input').value.trim();
+            const statusEl = document.getElementById('cal-status-text');
+            statusEl.textContent = "Saving and validating feed...";
+            try {
+                const res = await fetch('/api/config/calendar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ical_urls: urls })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    showAlert("Calendar configuration saved!");
+                    statusEl.textContent = `✅ Feed synced (${result.events_count || 0} events found).`;
+                    statusEl.style.color = "#10b981";
+                    refreshImage();
+                } else {
+                    statusEl.textContent = "⚠️ Error: " + result.message;
+                    statusEl.style.color = "#ef4444";
+                }
+            } catch (err) {
+                alert("Failed to save calendar: " + err);
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
     </script>
 </body>
 </html>

@@ -19,6 +19,11 @@ _cached_image_bytes: bytes = b""
 _cached_image_time: float = 0.0
 _cached_format: str = ""
 
+def invalidate_render_cache():
+    global _cached_image_time
+    _cached_image_time = 0.0
+
+
 def render_html_content(context: Dict[str, Any]) -> str:
     template = templates_env.get_template("dashboard.html")
     return template.render(

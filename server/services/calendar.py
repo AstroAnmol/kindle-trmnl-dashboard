@@ -19,7 +19,10 @@ SAMPLE_EVENTS = {
         {"title": "Design System Review", "time": "11:00 AM", "all_day": False, "location": "Studio"},
         {"title": "Family Dinner", "time": "07:00 PM", "all_day": False, "location": "Home"},
     ],
+    "upcoming": [],
     "is_sample": True,
+    "status": "sample_events",
+    "status_message": "No ICAL_URLS configured in config/.env. Showing sample events."
 }
 
 def _to_tz_datetime(dt_val: Any, target_tz: pytz.BaseTzInfo) -> datetime:
@@ -53,26 +56,50 @@ async def fetch_calendar_events() -> Dict[str, Any]:
         target_tz = pytz.UTC
 
     now = datetime.now(target_tz)
-    today_start = datetime.combine(now.date(), time.min)
+    today_date = now.date()
+    today_start = datetime.combine(today_date, time.min)
     today_start = target_tz.localize(today_start) if today_start.tzinfo is None else today_start
-    tomorrow_date = now.date() + timedelta(days=1)
-    tomorrow_end = datetime.combine(tomorrow_date, time.max)
-    tomorrow_end = target_tz.localize(tomorrow_end) if tomorrow_end.tzinfo is None else tomorrow_end
+    
+    # 7-day lookahead window to capture upcoming events even if today/tomorrow are clear
+    lookahead_date = today_date + timedelta(days=7)
+    lookahead_end = datetime.combine(lookahead_date, time.max)
+    lookahead_end = target_tz.localize(lookahead_end) if lookahead_end.tzinfo is None else lookahead_end
 
     raw_events: List[Dict[str, Any]] = []
+    feed_errors: List[str] = []
+    successful_feeds = 0
 
     async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-        for url in urls:
+        for raw_url in urls:
+            url = raw_url.strip()
+            # Normalize webcal:// to https://
+            if url.startswith("webcal://"):
+                url = "https://" + url[9:]
+            elif not url.startswith("http://") and not url.startswith("https://"):
+                url = "https://" + url
+
             try:
-                resp = await client.get(url)
+                logger.info(f"Fetching calendar feed: {url[:50]}...")
+                resp = await client.get(url, headers={"User-Agent": "Mozilla/5.0 (compatible; KindleTRMNL/1.0)"})
+                
                 if resp.status_code != 200:
-                    logger.warning(f"Failed to fetch iCal feed {url}: HTTP {resp.status_code}")
+                    err_msg = f"HTTP {resp.status_code} on feed {url[:40]}..."
+                    logger.warning(err_msg)
+                    feed_errors.append(err_msg)
+                    continue
+
+                if b"BEGIN:VCALENDAR" not in resp.content:
+                    err_msg = f"Feed did not return valid iCal data. Make sure to use the 'Secret address in iCal format' ending in .ics"
+                    logger.warning(err_msg)
+                    feed_errors.append(err_msg)
                     continue
 
                 cal = icalendar.Calendar.from_ical(resp.content)
                 cal_name = str(cal.get("X-WR-CALNAME", ""))
+                successful_feeds += 1
 
-                events_in_range = recurring_ical_events.of(cal).between(today_start, tomorrow_end)
+                # Expand recurring events in 7-day window
+                events_in_range = recurring_ical_events.of(cal).between(today_start, lookahead_end)
 
                 for ev in events_in_range:
                     dtstart_prop = ev.get("DTSTART")
@@ -97,16 +124,28 @@ async def fetch_calendar_events() -> Dict[str, Any]:
                         "location": location,
                         "cal_name": cal_name,
                         "event_date": dt_start.date(),
+                        "day_name": dt_start.strftime("%A"),
                     })
             except Exception as e:
-                logger.error(f"Error parsing iCal feed {url}: {e}")
+                err_msg = f"Error processing iCal feed {url[:40]}: {e}"
+                logger.error(err_msg)
+                feed_errors.append(err_msg)
+
+    if successful_feeds == 0 and feed_errors:
+        fallback = dict(SAMPLE_EVENTS)
+        fallback["status"] = "error"
+        fallback["status_message"] = "; ".join(feed_errors)
+        return fallback
 
     today_events = []
     tomorrow_events = []
+    upcoming_events = []
 
+    tomorrow_date = today_date + timedelta(days=1)
+
+    # Sort events by start time, putting all-day events first
     raw_events.sort(key=lambda x: (0 if x["all_day"] else 1, x["start_dt"]))
 
-    today_date = now.date()
     for ev in raw_events:
         item = {
             "title": ev["title"],
@@ -114,15 +153,26 @@ async def fetch_calendar_events() -> Dict[str, Any]:
             "all_day": ev["all_day"],
             "location": ev["location"],
             "cal_name": ev.get("cal_name", ""),
+            "day_name": ev["day_name"],
+            "date_str": ev["event_date"].strftime("%b %d"),
         }
         if ev["event_date"] == today_date:
             today_events.append(item)
         elif ev["event_date"] == tomorrow_date:
             tomorrow_events.append(item)
+        else:
+            upcoming_events.append(item)
+
+    status_str = "connected"
+    if feed_errors:
+        status_str = f"partial_errors: {'; '.join(feed_errors)}"
 
     return {
         "today": today_events,
         "tomorrow": tomorrow_events,
+        "upcoming": upcoming_events[:4],
         "is_sample": False,
+        "status": status_str,
         "total_count": len(today_events) + len(tomorrow_events),
+        "successful_feeds": successful_feeds,
     }
