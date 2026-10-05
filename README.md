@@ -1,22 +1,26 @@
 # 📟 Kindle TRMNL Dashboard (`kindle-trmnl-dashboard`)
 
-Turn any jailbroken Amazon Kindle into a dedicated, low-power, ambient smart wall display compatible with the **TRMNL** e-ink protocol.
+Turn your jailbroken **Amazon Kindle (WP63GW - 7th Gen Basic)** into a dedicated, low-power, ambient smart wall display compatible with the **TRMNL** e-ink protocol.
 
-Built with **FastAPI**, **Playwright**, and **Pillow**, this repository delivers a self-hosted dashboard server (containerized via Docker) along with battery-optimized client scripts utilizing NiLuJe's `fbink` for true deep-sleep e-ink rendering.
+Built with **FastAPI**, **Playwright**, and **Pillow**, this repository delivers a self-hosted dashboard server (containerized via Docker / Dockge) along with battery-optimized client scripts utilizing NiLuJe's `fbink` for true deep-sleep e-ink rendering.
 
 ---
 
 ## 🌟 Key Features
 
+* **Target Hardware (Kindle WP63GW / 7th Gen Basic):** Native 800×600 landscape layout, battery sysfs integration (`yoshi_battery` / `max77696-battery`), and frontlight-safe execution (no missing driver warnings).
 * **TRMNL Protocol Compatible:** Implements standard TRMNL endpoints (`/api/setup`, `/api/display`, `/api/log`).
 * **Multi-Feed Google Calendar:** Parses multiple private iCal (`.ics`) feeds with accurate **RFC 5545 recurring event expansion** (`recurring-ical-events`).
-* **Open-Meteo Weather:** Real-time weather, high/low forecasts, precipitation probability, humidity, and wind—**no API key required**.
-* **Markdown & JSON Tasks:** Live checklist with `- [ ]` and `- [x]` markdown support (`config/tasks.md`) or structured JSON.
+* **Open-Meteo Weather (Atlanta & Celsius Default):** Real-time weather, high/low forecasts, precipitation probability, humidity, and wind in **°C**—**no API key required**.
+* **Flexible Tasks & Notes:**
+  * **Local Markdown**: Edit `config/tasks.md` with standard `- [ ]` and `- [x]` checkboxes.
+  * **Optional Google Keep**: Automatically sync checklist items from Google Keep (via `gkeepapi` with App Password).
+  * **Structured JSON**: `config/tasks.json` fallback.
 * **TRMNL Monochrome Aesthetic:** 2px high-contrast borders, clean modular grid (60% agenda/weather, 40% tasks/stats), and crisp SVG icons.
 * **1-Bit E-Ink Pipeline:** Hardware-optimized bilevel rendering with optional **Floyd-Steinberg dithering** or clean thresholding in BMP or PNG.
-* **Kindle Power Optimization:** Turns on Wi-Fi only for updates (~10 seconds), reports battery & signal telemetry, and suspends to deep RAM sleep (`echo mem > /sys/power/state`) using RTC wake alarms.
+* **Kindle Power Optimization:** Powers on Wi-Fi only for updates (~10 seconds), reports battery & signal telemetry, and suspends to deep RAM sleep (`echo mem > /sys/power/state`) using RTC wake alarms.
 * **KUAL Launcher Extension:** Start, stop, refresh, and inspect device diagnostics straight from your Kindle screen.
-* **1-Command Docker Deployment:** Multi-stage `Dockerfile` with pre-installed Chromium and system fonts.
+* **Dockge & 1-Command Docker Deployment:** Tailored for `/opt/stacks/kindle-trmnl-dashboard` at `http://10.0.0.219:5055`.
 
 ---
 
@@ -24,7 +28,7 @@ Built with **FastAPI**, **Playwright**, and **Pillow**, this repository delivers
 
 ```
 +-------------------------------------------------------------------------+
-|                         Jailbroken Kindle Display                       |
+|                  Kindle WP63GW Display (7th Gen Basic)                  |
 |                                                                         |
 |  [RTC Wake Alarm] ──> [Enable Wi-Fi] ──> [Collect Batt % & Signal RSSI] |
 |                                                      │                  |
@@ -34,15 +38,15 @@ Built with **FastAPI**, **Playwright**, and **Pillow**, this repository delivers
 +──────────────────────────────────────────────────────┼──────────────────+
                                                        │ HTTP / Wi-Fi
 +──────────────────────────────────────────────────────┼──────────────────+
-|                    Home Server (Docker Container :5055)                 |
+|           Home Server: 10.0.0.219 (Docker / Dockge :5055)               |
 |                                                      │                  |
 |  • /api/log      <── Ingests Battery Telemetry ──────┘                  |
-|  • /api/display  ──> Renders E-ink Bitmap Image                         |
+|  • /api/display  ──> Renders 800x600 E-ink Bitmap Image                 |
 |                                                                         |
 |  [Data Aggregator]                                                      |
 |    ├── Google Calendar (iCal .ics feeds with recurring event expansion) |
-|    ├── Open-Meteo API (Current, forecast, humidity, rain probability)   |
-|    └── Tasks & Notes (config/tasks.md checklist parser)                 |
+|    ├── Open-Meteo API (Atlanta, GA | Celsius forecast, humidity, rain)  |
+|    └── Tasks & Notes (config/tasks.md or Google Keep sync)              |
 |                                                                         |
 |  [Rendering Pipeline]                                                   |
 |    Jinja2 Template ──> Headless Chromium ──> Pillow 1-Bit / Grayscale    |
@@ -51,30 +55,76 @@ Built with **FastAPI**, **Playwright**, and **Pillow**, this repository delivers
 
 ---
 
-## 🚀 Quickstart: Server Deployment (Docker)
+## 🚀 Server Deployment: Dockge & Docker Compose
 
-Deploying to your home server (Raspberry Pi, Unraid, Synology, Proxmox, or Linux server) requires only **Docker** and **Docker Compose**.
+Designed to run cleanly under Dockge at `/opt/stacks/kindle-trmnl-dashboard` on your home server (`10.0.0.219`).
 
-### 1. Clone the Repository
+### Option A: Via Dockge (Recommended)
+1. In Dockge UI (`http://10.0.0.219:5001`), click **+ Compose** to create a new stack.
+2. Set Stack Name: `kindle-trmnl-dashboard`.
+3. Paste the contents of `docker-compose.yml`:
+   ```yaml
+   services:
+     kindle-trmnl:
+       build:
+         context: .
+         dockerfile: Dockerfile
+       container_name: kindle-trmnl-dashboard
+       restart: unless-stopped
+       ports:
+         - "5055:5055"
+       volumes:
+         - ./config:/app/config
+       env_file:
+         - path: ./config/.env
+           required: false
+         - path: .env
+           required: false
+       environment:
+         - PORT=5055
+         - HOST=0.0.0.0
+         - REFRESH_RATE_SECONDS=${REFRESH_RATE_SECONDS:-900}
+         - ICAL_URLS=${ICAL_URLS:-}
+         - LATITUDE=${LATITUDE:-33.7490}
+         - LONGITUDE=${LONGITUDE:--84.3880}
+         - LOCATION_NAME=${LOCATION_NAME:-Atlanta}
+         - TIMEZONE=${TIMEZONE:-America/New_York}
+         - KINDLE_SCREEN_WIDTH=${KINDLE_SCREEN_WIDTH:-800}
+         - KINDLE_SCREEN_HEIGHT=${KINDLE_SCREEN_HEIGHT:-600}
+         - IMAGE_FORMAT=${IMAGE_FORMAT:-png}
+         - COLOR_MODE=${COLOR_MODE:-1bit}
+         - DITHERING=${DITHERING:-true}
+         - CELSIUS=${CELSIUS:-true}
+   ```
+4. Click **Start** to build and launch the container.
+5. In the stack directory (`/opt/stacks/kindle-trmnl-dashboard/config`), you can edit `tasks.md` and `.env` at any time.
+
+### Option B: Standalone Docker Compose (Terminal)
 ```bash
-git clone https://github.com/anmol/kindle-trmnl-dashboard.git
-cd kindle-trmnl-dashboard
-```
-
-### 2. Configure Environment Settings
-```bash
+git clone https://github.com/anmol/kindle-trmnl-dashboard.git /opt/stacks/kindle-trmnl-dashboard
+cd /opt/stacks/kindle-trmnl-dashboard
 cp config/.env.example config/.env
-nano config/.env
+docker compose up -d --build
 ```
 
-Key environment variables in `config/.env`:
+### Verify in Your Web Browser
+Open your browser to:
+- **Interactive Web Preview**: `http://10.0.0.219:5055/`
+- **Raw Rendered Image**: `http://10.0.0.219:5055/api/display`
+- **Aggregated JSON Context**: `http://10.0.0.219:5055/api/data`
+- **Interactive Swagger Docs**: `http://10.0.0.219:5055/docs`
+
+---
+
+## ⚙️ Configuration (`config/.env`)
+
 ```ini
 # E-ink refresh interval in seconds (default: 900 = 15 minutes)
 REFRESH_RATE_SECONDS=900
 
-# Viewport dimensions (Kindle 4/5/Touch: 600x800 | Paperwhite 3/4: 1072x1448 | TRMNL: 800x480)
+# Viewport dimensions (Kindle WP63GW 7th Gen Basic Landscape: 800x600)
 KINDLE_SCREEN_WIDTH=800
-KINDLE_SCREEN_HEIGHT=480
+KINDLE_SCREEN_HEIGHT=600
 SCREEN_ORIENTATION=0
 
 # Image format ('png' or 'bmp') and color mode ('1bit' or '8bit')
@@ -86,53 +136,26 @@ DITHERING=true
 TIMEZONE=America/New_York
 
 # Google Calendar private iCal URLs (comma-separated for multiple feeds)
-ICAL_URLS=https://calendar.google.com/calendar/ical/your_private_feed/basic.ics
+ICAL_URLS=https://calendar.google.com/calendar/ical/.../basic.ics
 
-# Weather (Open-Meteo - coordinates for your city)
-LATITUDE=40.7128
-LONGITUDE=-74.0060
-LOCATION_NAME=New York
-CELSIUS=false
+# Weather (Open-Meteo - Atlanta, GA default)
+LATITUDE=33.7490
+LONGITUDE=-84.3880
+LOCATION_NAME=Atlanta
+CELSIUS=true
+
+# Optional: Google Keep Integration
+GOOGLE_KEEP_EMAIL=
+GOOGLE_KEEP_PASSWORD=
+GOOGLE_KEEP_NOTE_TITLE="Kindle Tasks"
 ```
-
-### 3. Launch the Container
-```bash
-docker compose up -d --build
-```
-
-### 4. Verify in Your Web Browser
-Open your browser to:
-- **Interactive Web Preview**: `http://<server-ip>:5055/`
-- **Raw Rendered Image**: `http://<server-ip>:5055/api/display`
-- **Aggregated JSON Context**: `http://<server-ip>:5055/api/data`
-- **Interactive Swagger Docs**: `http://<server-ip>:5055/docs`
 
 ---
 
-## 📅 Calendar Setup: Google Calendar iCal Feeds
+## 📝 Tasks & Notes Integration
 
-You do **not** need a Google Cloud API key or OAuth setup to display your calendars. You can use your private iCal link:
-
-1. Open [Google Calendar](https://calendar.google.com/) in your web browser.
-2. In the left sidebar, hover over the calendar you want to sync and click the three dots (`⋮`) ➜ **Settings and sharing**.
-3. Scroll down to the **Integrate calendar** section.
-4. Locate the field titled **"Secret address in iCal format"**.
-5. Click the copy icon to copy the private `.ics` URL.
-   > **Note**: Do **not** use the "Public address in iCal format" unless your calendar is intentionally set to public.
-6. Paste the URL into `config/.env`:
-   ```ini
-   ICAL_URLS=https://calendar.google.com/calendar/ical/.../basic.ics
-   ```
-7. To include multiple calendars (e.g. Work, Family, Birthdays), separate them with commas:
-   ```ini
-   ICAL_URLS=https://calendar.google.com/calendar/ical/cal1/basic.ics,https://calendar.google.com/calendar/ical/cal2/basic.ics
-   ```
-
----
-
-## 📝 Tasks & Notes Setup
-
-By default, the server reads tasks directly from `config/tasks.md`. You can edit this file at any time (even while the server is running); updates appear on the next screen refresh.
+### 1. Local Markdown (`config/tasks.md`)
+By default, the server reads tasks directly from `config/tasks.md`. You can edit this file at any time; updates appear on the next screen refresh.
 
 ```markdown
 # Daily Focus & Tasks
@@ -148,32 +171,58 @@ By default, the server reads tasks directly from `config/tasks.md`. You can edit
 - Reminder: Trash pickup Tuesday 7:00 AM
 ```
 
-* `- [ ] text` creates an unchecked task.
-* `- [x] text` creates a completed task (rendered with strikethrough).
-* Lines under `# Quick Notes` are rendered in the footer notes card.
+### 2. Google Keep Integration (Optional)
+If you prefer adding tasks from your phone via Google Keep:
+1. Create a checklist note in Google Keep titled **"Kindle Tasks"**.
+2. Generate a [Google App Password](https://myaccount.google.com/apppasswords) (select App: *Other (Custom name)* ➜ *Kindle Dashboard*).
+3. Set in `config/.env`:
+   ```ini
+   GOOGLE_KEEP_EMAIL=your.email@gmail.com
+   GOOGLE_KEEP_PASSWORD=xxxx xxxx xxxx xxxx
+   GOOGLE_KEEP_NOTE_TITLE="Kindle Tasks"
+   ```
+4. The dashboard will automatically sync the checked and unchecked items from your Keep note.
 
 ---
 
-## 📖 Kindle Client Setup (Jailbroken Kindle)
+## 📅 Calendar Setup: Google Calendar iCal Feeds
+
+You do **not** need a Google Cloud API key or OAuth setup to display your calendars. You can use your private iCal link:
+
+1. Open [Google Calendar](https://calendar.google.com/) in your web browser.
+2. In the left sidebar, hover over the calendar you want to sync and click the three dots (`⋮`) ➜ **Settings and sharing**.
+3. Scroll down to the **Integrate calendar** section.
+4. Locate the field titled **"Secret address in iCal format"**.
+5. Copy the private `.ics` URL and paste it into `config/.env`:
+   ```ini
+   ICAL_URLS=https://calendar.google.com/calendar/ical/your_private_feed/basic.ics
+   ```
+
+---
+
+## 📱 Kindle WP63GW Client Setup (7th Gen Basic)
+
+The Kindle WP63GW (Kindle Touch 2 / 7th Gen Basic) features an 800×600 e-ink panel and does **not** have a built-in frontlight. Our scripts automatically handle these hardware specifications.
 
 ### Prerequisites on Kindle
-1. A **jailbroken Kindle** (e.g., via LanguageBreak, WatchThis, or WinterBreak).
+1. A **jailbroken Kindle WP63GW** (via LanguageBreak or WatchThis).
 2. **KUAL** (Kindle Unified Application Launcher) installed.
 3. **NiLuJe's FBInk** binary:
-   - Download the precompiled binary from the [MobileRead FBInk thread](https://www.mobileread.com/forums/showthread.php?t=299066) or [GitHub Releases](https://github.com/NiLuJe/FBInk/releases).
-   - Place `fbink` in `kindle/bin/fbink` (or install system-wide via NiLuJe's installer).
+   - Download `fbink-armel` or `fbink-armhf` from the [NiLuJe FBInk release thread](https://www.mobileread.com/forums/showthread.php?t=299066).
+   - Place `fbink` in `kindle/bin/fbink` (or install via NiLuJe's KUAL extension).
 
 ---
 
 ### Step 1: Configure Client Settings
-On your computer, edit `kindle/config.sh`:
-```bash
-nano kindle/config.sh
-```
-Set `SERVER_URL` to your home server's IP address:
+Edit `kindle/config.sh`:
 ```sh
-SERVER_URL="http://192.168.1.100:5055"
-REFRESH_INTERVAL=900   # 15 minutes
+# Set to your home server IP (default: 10.0.0.219:5055)
+SERVER_URL="http://10.0.0.219:5055"
+
+# Rotation for Kindle WP63GW (landscape 800x600):
+# 1 = 90° clockwise landscape (default)
+# 3 = 270° inverted landscape
+FBINK_ROTATION=1
 ```
 
 ---
@@ -201,14 +250,13 @@ sh setup.sh
 - Set execution permissions.
 - Validate `fbink`.
 - Prevent screensaver timeout (`preventScreenSaver 1`).
-- Turn off the frontlight to save power.
-- Test server connectivity.
+- Check frontlight hardware (gracefully skipped on WP63GW without driver warnings).
+- Unload background book indexer to conserve battery.
+- Test server connectivity to `http://10.0.0.219:5055/api/setup`.
 
 ---
 
 ### Step 4: Start the Dashboard
-You have two options to launch the dashboard:
-
 #### Option A: Via KUAL Launcher (Recommended)
 1. Open **KUAL** from your Kindle book library.
 2. Select **Kindle TRMNL Dashboard**.
@@ -224,59 +272,15 @@ nohup sh loop.sh >/dev/null 2>&1 &
 
 ## 🔋 Battery Preservation Deep Dive
 
-With our battery-preserving execution loop, an older Kindle can run for **3 to 6 weeks on a single battery charge**:
+With our battery-preserving execution loop, a Kindle WP63GW runs for **4 to 8 weeks on a single battery charge**:
 
 | Optimization | Implementation | Impact |
 | :--- | :--- | :--- |
-| **Frontlight Disabled** | `lipc-set-prop -i com.lab126.powerd flAsynchronouseLevel 0` | Saves ~60-80% power on illuminated models (Paperwhite/Oasis/Voyage). |
+| **Frontlight Disabled** | Checked and skipped automatically on WP63GW. | No driver errors or wasted cycles. |
 | **Wi-Fi Duty Cycle** | Wi-Fi is powered ON only for the ~10s download window, then powered OFF immediately. | Eliminates continuous wireless radio power draw. |
 | **Deep RAM Sleep** | Device executes `echo mem > /sys/power/state` between refreshes. | Kindle enters true hardware sleep state (< 1mA current draw). |
 | **Background Indexing Off** | `lipc-set-prop com.lab126.blanket unload` | Prevents Kindle OS from indexing files in the background. |
-| **Dynamic Sleep Intervals** | Server can increase sleep interval during nighttime via `Refresh-Rate` header. | Fewer wake cycles when you're asleep. |
-
----
-
-## 📱 Hardware Resolution Reference Table
-
-Configure `KINDLE_SCREEN_WIDTH` and `KINDLE_SCREEN_HEIGHT` in `config/.env` according to your Kindle model:
-
-| Model | Generation | Native Resolution | Recommended Orientation | Recommended Config |
-| :--- | :--- | :--- | :--- | :--- |
-| **TRMNL Native** | 7.5" E-ink | 800 × 480 | Landscape | `WIDTH=800, HEIGHT=480, ROTATION=0` |
-| **Kindle Basic 4 / 5** | 4th / 5th | 600 × 800 | Landscape (800x600) | `WIDTH=800, HEIGHT=600, ROTATION=1` |
-| **Kindle Touch** | 4th | 600 × 800 | Landscape (800x600) | `WIDTH=800, HEIGHT=600, ROTATION=1` |
-| **Kindle Paperwhite 1 / 2**| 5th / 6th | 758 × 1024 | Landscape (1024x758) | `WIDTH=1024, HEIGHT=758, ROTATION=1` |
-| **Kindle Paperwhite 3 / 4**| 7th / 10th | 1072 × 1448 | Landscape (1448x1072)| `WIDTH=1448, HEIGHT=1072, ROTATION=1` |
-| **Kindle Voyage** | 7th | 1072 × 1448 | Landscape (1448x1072)| `WIDTH=1448, HEIGHT=1072, ROTATION=1` |
-| **Kindle Oasis 1** | 8th | 1072 × 1448 | Landscape (1448x1072)| `WIDTH=1448, HEIGHT=1072, ROTATION=1` |
-| **Kindle Paperwhite 5** | 11th | 1264 × 1680 | Landscape (1680x1264)| `WIDTH=1680, HEIGHT=1264, ROTATION=1` |
-| **Kindle Oasis 2 / 3** | 9th / 10th | 1264 × 1680 | Landscape (1680x1264)| `WIDTH=1680, HEIGHT=1264, ROTATION=1` |
-
----
-
-## 🛠️ TRMNL API Specification
-
-| Method | Endpoint | Description | Headers Returned |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/setup` | Handshake verification | `status: 200` |
-| `GET` | `/api/display` | Returns rendered e-ink image | `Refresh-Rate`, `Image-Format`, `Cache-Control` |
-| `POST`| `/api/log` | Logs device battery % and RSSI | `status: 200` |
-| `GET` | `/` | Desktop/Mobile preview page | HTML |
-| `GET` | `/api/data` | Aggregated JSON context | JSON |
-| `GET` | `/api/health`| Health status probe | JSON |
-
----
-
-## ❓ Troubleshooting
-
-### 1. Wi-Fi does not reconnect after wake
-Some Kindle firmware versions require an extra 2–3 seconds after `lipc-set-prop com.lab126.cmd wirelessEnable 1`. You can increase `WIFI_TIMEOUT=30` in `kindle/config.sh`.
-
-### 2. Device does not wake up automatically from sleep
-On older Kindles running Linux 2.6/3.0 kernels, the RTC device is mapped to `/dev/rtc1`. On newer devices, it is `/dev/rtc0` or handled directly via `lipc-set-prop -i com.lab126.powerd rtcWakeup <seconds>`. `kindle/display.sh` tries both methods automatically.
-
-### 3. Screen image looks inverted
-If your Kindle displays white text on black background instead of black text on white, toggle `DITHERING=false` or adjust `FBINK_ROTATION` in `kindle/config.sh`.
+| **WP63GW Battery Sysfs** | Prioritizes `/sys/devices/system/yoshi_battery/battery_capacity` and `max77696-battery`. | Accurate battery telemetry on every refresh. |
 
 ---
 

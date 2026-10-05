@@ -13,24 +13,34 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     refresh_rate_seconds: int = 900
 
+    # Kindle WP63GW (7th Gen Basic) Landscape: 800x600
     kindle_screen_width: int = 800
-    kindle_screen_height: int = 480
+    kindle_screen_height: int = 600
     screen_orientation: int = 0  # 0, 90, 180, 270
 
     image_format: str = "png"  # png or bmp
     color_mode: str = "1bit"  # 1bit or 8bit
     dithering: bool = True
 
+    # Weather Defaults (Atlanta, GA & Celsius)
     timezone: str = "America/New_York"
     ical_urls: str = ""
-    latitude: float = 40.7128
-    longitude: float = -74.0060
-    location_name: str = "New York"
-    celsius: bool = False
+    latitude: float = 33.7490
+    longitude: float = -84.3880
+    location_name: str = "Atlanta"
+    celsius: bool = True
 
+    # Tasks / Notes Integration
     tasks_file_path: str = "config/tasks.md"
     google_tasks_credentials_file: Optional[str] = None
+    google_tasks_list_id: str = ""
 
+    # Google Keep Integration (Optional)
+    google_keep_email: str = ""
+    google_keep_password: str = ""  # Google App Password or master token
+    google_keep_note_title: str = "Kindle Tasks"
+
+    # Device Security & Cache
     allowed_device_ids: str = ""
     cache_ttl_seconds: int = 60
     device_status_file_path: str = "config/device_status.json"

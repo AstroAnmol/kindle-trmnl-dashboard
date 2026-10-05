@@ -1,6 +1,7 @@
 #!/bin/sh
 # ==============================================================================
 # Kindle Initial Setup Script: kindle-trmnl-dashboard
+# Optimized for: Kindle WP63GW (7th Gen Basic - KT2 / Touch 2)
 # Run once on your jailbroken Kindle: sh /mnt/us/kindle-trmnl-dashboard/setup.sh
 # ==============================================================================
 
@@ -9,6 +10,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "=================================================="
 echo "🔧 Configuring Kindle TRMNL Dashboard Display"
+echo "   Target Device: Kindle WP63GW (7th Gen Basic)"
+echo "   Server URL:    ${SERVER_URL}"
 echo "=================================================="
 
 # 1. Make all helper scripts executable
@@ -42,10 +45,15 @@ fi
 echo "🔌 Disabling Kindle screensaver timeout..."
 lipc-set-prop com.lab126.powerd preventScreenSaver 1 2>/dev/null || true
 
-# 4. Turn off front-light completely to save battery
-echo "💡 Shuts off frontlight to save power..."
-lipc-set-prop -i com.lab126.powerd flAsynchronouseLevel 0 2>/dev/null || true
-echo 0 > /sys/class/backlight/*/brightness 2>/dev/null || true
+# 4. Frontlight Handling:
+# WP63GW does not have a frontlight (unlike Paperwhite). Check before calling.
+if [ -d /sys/class/backlight ] && [ -n "$(ls -A /sys/class/backlight 2>/dev/null)" ]; then
+    echo "💡 Frontlight detected, dimming to 0 to save battery..."
+    lipc-set-prop -i com.lab126.powerd flAsynchronouseLevel 0 2>/dev/null || true
+    echo 0 > /sys/class/backlight/*/brightness 2>/dev/null || true
+else
+    echo "💡 No frontlight hardware detected (Kindle WP63GW Basic). Skipping frontlight adjustment."
+fi
 
 # 5. Disable background indexing to prevent unwanted battery drain
 echo "🛑 Unloading background book indexer..."
@@ -59,7 +67,7 @@ sleep 4
 SETUP_STATUS=$(curl -s -m 8 "$SERVER_URL/api/setup" 2>/dev/null || wget -q -O - "$SERVER_URL/api/setup" 2>/dev/null)
 
 if echo "$SETUP_STATUS" | grep -q "Connected to self-hosted TRMNL"; then
-    echo "✅ Successfully connected to self-hosted TRMNL server!"
+    echo "✅ Successfully connected to self-hosted TRMNL server at $SERVER_URL!"
 else
     echo "⚠️  Could not reach server at $SERVER_URL. Please verify your Wi-Fi and SERVER_URL in config.sh."
 fi

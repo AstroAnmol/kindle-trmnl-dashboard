@@ -1,11 +1,11 @@
 #!/bin/sh
 # ==============================================================================
 # Kindle Client Configuration: kindle-trmnl-dashboard
-# Edit this file with your server details before copying to Kindle
+# Optimized for: Kindle WP63GW (7th Gen Basic - KT2 / Touch 2)
 # ==============================================================================
 
-# Server URL (IP address of your Docker host machine)
-SERVER_URL="http://192.168.1.100:5055"
+# Server URL (IP address of your Docker host machine: 10.0.0.219:5055)
+SERVER_URL="http://10.0.0.219:5055"
 
 # Optional: Device Access Token (defaults to Kindle MAC address if empty)
 API_TOKEN=""
@@ -15,9 +15,11 @@ API_TOKEN=""
 DEFAULT_INTERVAL=900
 
 # Screen orientation for fbink:
-# 0 = normal (portrait or landscape native), 1 = 90 deg, 2 = 180 deg, 3 = 270 deg
-# Alternatively for fbink: -r 0, -r 1, -r 2, -r 3
-FBINK_ROTATION=0
+# On Kindle WP63GW (portrait 600x800 physical panel):
+# 1 = Landscape (rotated 90° clockwise - 800x600 display)
+# 3 = Landscape (rotated 270° / inverted landscape)
+# 0 = Portrait (native 600x800)
+FBINK_ROTATION=1
 
 # Seconds to wait for Wi-Fi association before giving up
 WIFI_TIMEOUT=20

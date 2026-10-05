@@ -37,19 +37,19 @@ WMO_WEATHER_MAP: Dict[int, Dict[str, str]] = {
 }
 
 DEFAULT_WEATHER: Dict[str, Any] = {
-    "temperature": 72,
-    "apparent_temperature": 72,
-    "temp_max": 75,
-    "temp_min": 60,
+    "temperature": 22,
+    "apparent_temperature": 22,
+    "temp_max": 26,
+    "temp_min": 17,
     "condition": "Partly Cloudy",
     "icon": "partly-cloudy",
     "weather_code": 2,
-    "humidity": 45,
-    "precipitation_probability": 10,
+    "humidity": 55,
+    "precipitation_probability": 15,
     "precipitation": 0.0,
-    "wind_speed": 5,
-    "unit": "°F",
-    "location": settings.location_name,
+    "wind_speed": 8,
+    "unit": "°C",
+    "location": "Atlanta",
     "is_fallback": True,
 }
 
@@ -102,13 +102,13 @@ async def fetch_weather() -> Dict[str, Any]:
         temp_min_list = daily.get("temperature_2m_min", [])
         precip_prob_list = daily.get("precipitation_probability_max", [])
 
-        temp_max = round(temp_max_list[0]) if temp_max_list else round(current.get("temperature_2m", 70))
-        temp_min = round(temp_min_list[0]) if temp_min_list else round(current.get("temperature_2m", 60))
+        temp_max = round(temp_max_list[0]) if temp_max_list else round(current.get("temperature_2m", 24))
+        temp_min = round(temp_min_list[0]) if temp_min_list else round(current.get("temperature_2m", 18))
         precip_prob = round(precip_prob_list[0]) if precip_prob_list else 0
 
         weather_info = {
-            "temperature": round(current.get("temperature_2m", 70)),
-            "apparent_temperature": round(current.get("apparent_temperature", 70)),
+            "temperature": round(current.get("temperature_2m", 22)),
+            "apparent_temperature": round(current.get("apparent_temperature", 22)),
             "temp_max": temp_max,
             "temp_min": temp_min,
             "condition": meta["condition"],

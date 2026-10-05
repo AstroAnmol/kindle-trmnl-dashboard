@@ -1,6 +1,7 @@
 #!/bin/sh
 # ==============================================================================
 # Kindle Display Loop Step: kindle-trmnl-dashboard
+# Optimized for: Kindle WP63GW (7th Gen Basic - KT2 / Touch 2)
 # Fetches latest dashboard image, renders to e-ink screen via fbink,
 # sends battery telemetry, and puts Kindle into deep sleep with RTC wakeup.
 # ==============================================================================
@@ -42,17 +43,21 @@ if [ -z "$MAC_ADDR" ]; then
     MAC_ADDR="$(ifconfig wlan0 2>/dev/null | grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}' | head -n 1)"
 fi
 if [ -z "$MAC_ADDR" ]; then
-    MAC_ADDR="kindle-device"
+    MAC_ADDR="kindle-wp63gw"
 fi
 
 DEVICE_TOKEN="${API_TOKEN:-$MAC_ADDR}"
 
 # ------------------------------------------------------------------------------
-# 3. Read Battery Capacity & Voltage
+# 3. Read Battery Capacity & Voltage (Kindle WP63GW / KT2 sysfs nodes)
 # ------------------------------------------------------------------------------
 BATT_PERCENT=100
 if [ -f /sys/devices/system/yoshi_battery/battery_capacity ]; then
     BATT_PERCENT="$(cat /sys/devices/system/yoshi_battery/battery_capacity | tr -d '\r\n')"
+elif [ -f /sys/class/power_supply/max77696-battery/capacity ]; then
+    BATT_PERCENT="$(cat /sys/class/power_supply/max77696-battery/capacity | tr -d '\r\n')"
+elif [ -f /sys/class/power_supply/mc13892_battery/capacity ]; then
+    BATT_PERCENT="$(cat /sys/class/power_supply/mc13892_battery/capacity | tr -d '\r\n')"
 elif [ -f /sys/class/power_supply/battery/capacity ]; then
     BATT_PERCENT="$(cat /sys/class/power_supply/battery/capacity | tr -d '\r\n')"
 elif [ -f /sys/devices/platform/pmic_battery.1/power_supply/pmic_battery/capacity ]; then
@@ -68,6 +73,12 @@ BATT_VOLTAGE=4.0
 if [ -f /sys/devices/system/yoshi_battery/battery_voltage ]; then
     RAW_V="$(cat /sys/devices/system/yoshi_battery/battery_voltage | tr -d '\r\n')"
     BATT_VOLTAGE=$(awk -v v="$RAW_V" 'BEGIN { printf "%.2f", (v > 1000 ? v/1000 : v) }')
+elif [ -f /sys/class/power_supply/max77696-battery/voltage_now ]; then
+    RAW_V="$(cat /sys/class/power_supply/max77696-battery/voltage_now | tr -d '\r\n')"
+    BATT_VOLTAGE=$(awk -v v="$RAW_V" 'BEGIN { printf "%.2f", (v > 1000000 ? v/1000000 : (v > 1000 ? v/1000 : v)) }')
+elif [ -f /sys/class/power_supply/mc13892_battery/voltage_now ]; then
+    RAW_V="$(cat /sys/class/power_supply/mc13892_battery/voltage_now | tr -d '\r\n')"
+    BATT_VOLTAGE=$(awk -v v="$RAW_V" 'BEGIN { printf "%.2f", (v > 1000000 ? v/1000000 : (v > 1000 ? v/1000 : v)) }')
 elif [ -f /sys/class/power_supply/battery/voltage_now ]; then
     RAW_V="$(cat /sys/class/power_supply/battery/voltage_now | tr -d '\r\n')"
     BATT_VOLTAGE=$(awk -v v="$RAW_V" 'BEGIN { printf "%.2f", (v > 1000000 ? v/1000000 : (v > 1000 ? v/1000 : v)) }')
@@ -84,7 +95,6 @@ lipc-set-prop com.lab126.cmd wirelessEnable 1 2>/dev/null || true
 CONNECTED=0
 TIMER=0
 while [ $TIMER -lt $WIFI_TIMEOUT ]; do
-    # Check if we have an IP address and default route
     if ifconfig wlan0 2>/dev/null | grep -q "inet addr:" || ip route show 2>/dev/null | grep -q "default"; then
         CONNECTED=1
         break
@@ -115,7 +125,7 @@ fi
 # 5. POST Telemetry to /api/log
 # ------------------------------------------------------------------------------
 if [ $CONNECTED -eq 1 ]; then
-    JSON_PAYLOAD="{\"device_id\":\"$MAC_ADDR\",\"battery_percent\":$BATT_PERCENT,\"battery_voltage\":$BATT_VOLTAGE,\"signal_strength\":$RSSI}"
+    JSON_PAYLOAD="{\"device_id\":\"$MAC_ADDR\",\"battery_percent\":$BATT_PERCENT,\"battery_voltage\":$BATT_VOLTAGE,\"signal_strength\":$RSSI,\"firmware_version\":\"WP63GW-KT2\"}"
     curl -s -m 6 -X POST \
         -H "Content-Type: application/json" \
         -d "$JSON_PAYLOAD" \
@@ -147,10 +157,10 @@ if [ $CONNECTED -eq 1 ]; then
         fi
 
         # ----------------------------------------------------------------------
-        # 7. Render Image to Screen via fbink (or eips fallback)
+        # 7. Render Image to Screen via fbink (with landscape rotation)
         # ----------------------------------------------------------------------
         if [ -n "$FOUND_FBINK" ]; then
-            log "Rendering image with fbink..."
+            log "Rendering image with fbink (rotation: $FBINK_ROTATION)..."
             "$FOUND_FBINK" -q -g -c -r "$FBINK_ROTATION" "$SCREEN_FILE"
         elif command -v eips >/dev/null 2>&1; then
             log "Rendering image with native eips fallback..."

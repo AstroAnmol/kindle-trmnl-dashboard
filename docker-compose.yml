@@ -1,3 +1,10 @@
+# ==============================================================================
+# Docker Compose: kindle-trmnl-dashboard
+# Optimized for Dockge (/opt/stacks/kindle-trmnl-dashboard) & standalone Docker
+# Host IP: 10.0.0.219:5055
+# Target Hardware: Kindle WP63GW (7th Gen Basic - 800x600 Landscape)
+# ==============================================================================
+
 services:
   kindle-trmnl:
     build:
@@ -8,7 +15,7 @@ services:
     ports:
       - "5055:5055"
     volumes:
-      # Mount ./config for persistence: .env, tasks.md, device telemetry
+      # Persistent config volume: mounts .env, tasks.md, device telemetry
       - ./config:/app/config
     env_file:
       - path: ./config/.env
@@ -20,12 +27,16 @@ services:
       - HOST=0.0.0.0
       - REFRESH_RATE_SECONDS=${REFRESH_RATE_SECONDS:-900}
       - ICAL_URLS=${ICAL_URLS:-}
-      - LATITUDE=${LATITUDE:-40.7128}
-      - LONGITUDE=${LONGITUDE:--74.0060}
+      - LATITUDE=${LATITUDE:-33.7490}
+      - LONGITUDE=${LONGITUDE:--84.3880}
+      - LOCATION_NAME=${LOCATION_NAME:-Atlanta}
       - TIMEZONE=${TIMEZONE:-America/New_York}
       - KINDLE_SCREEN_WIDTH=${KINDLE_SCREEN_WIDTH:-800}
-      - KINDLE_SCREEN_HEIGHT=${KINDLE_SCREEN_HEIGHT:-480}
+      - KINDLE_SCREEN_HEIGHT=${KINDLE_SCREEN_HEIGHT:-600}
       - IMAGE_FORMAT=${IMAGE_FORMAT:-png}
       - COLOR_MODE=${COLOR_MODE:-1bit}
       - DITHERING=${DITHERING:-true}
-      - CELSIUS=${CELSIUS:-false}
+      - CELSIUS=${CELSIUS:-true}
+      - GOOGLE_KEEP_EMAIL=${GOOGLE_KEEP_EMAIL:-}
+      - GOOGLE_KEEP_PASSWORD=${GOOGLE_KEEP_PASSWORD:-}
+      - GOOGLE_KEEP_NOTE_TITLE=${GOOGLE_KEEP_NOTE_TITLE:-Kindle Tasks}
