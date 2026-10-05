@@ -4,6 +4,10 @@
 # ==============================================================================
 EXT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
+# Auto-strip any Windows carriage returns from scripts in-place
+sed -i -e 's/\r$//' "${EXT_DIR}"/*.sh "${EXT_DIR}/bin"/*.sh 2>/dev/null || true
+chmod +x "${EXT_DIR}"/*.sh "${EXT_DIR}/bin"/*.sh 2>/dev/null || true
+
 if command -v eips >/dev/null 2>&1; then
     eips 0 39 "TRMNL: Refreshing screen..." 2>/dev/null || true
 fi
@@ -24,7 +28,7 @@ elif [ -f "/mnt/us/display.sh" ]; then
 fi
 
 if [ -n "$DISPLAY_SCRIPT" ]; then
-    nohup sh "$DISPLAY_SCRIPT" >/tmp/kindle-once.log 2>&1 &
+    nohup /bin/sh "$DISPLAY_SCRIPT" >/tmp/kindle-once.log 2>&1 &
 else
     if command -v eips >/dev/null 2>&1; then
         eips 0 39 "TRMNL Error: display.sh not found!" 2>/dev/null || true

@@ -4,6 +4,9 @@
 # ==============================================================================
 EXT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
+sed -i -e 's/\r$//' "${EXT_DIR}"/*.sh "${EXT_DIR}/bin"/*.sh 2>/dev/null || true
+chmod +x "${EXT_DIR}"/*.sh "${EXT_DIR}/bin"/*.sh 2>/dev/null || true
+
 CONFIG_SCRIPT=""
 if [ -f "${EXT_DIR}/config.sh" ]; then
     CONFIG_SCRIPT="${EXT_DIR}/config.sh"

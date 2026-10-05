@@ -3,6 +3,10 @@
 # Kindle TRMNL - Start Background Loop
 # ==============================================================================
 EXT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+sed -i -e 's/\r$//' "${EXT_DIR}"/*.sh "${EXT_DIR}/bin"/*.sh 2>/dev/null || true
+chmod +x "${EXT_DIR}"/*.sh "${EXT_DIR}/bin"/*.sh 2>/dev/null || true
+
 PID_FILE="/tmp/kindle-trmnl.pid"
 
 if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
@@ -24,7 +28,7 @@ elif [ -f "/mnt/us/kindle-trmnl-dashboard/loop.sh" ]; then
 fi
 
 if [ -n "$LOOP_SCRIPT" ]; then
-    nohup sh "$LOOP_SCRIPT" >/tmp/kindle-loop.log 2>&1 &
+    nohup /bin/sh "$LOOP_SCRIPT" >/tmp/kindle-loop.log 2>&1 &
     sleep 1
     if command -v eips >/dev/null 2>&1; then
         eips 0 39 "TRMNL: Dashboard loop started" 2>/dev/null || true
