@@ -5,12 +5,441 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width={{ width }}, height={{ height }}, initial-scale=1.0">
     <title>Kindle TRMNL Dashboard</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css">
     <style>
-        /* Exact Viewport Constraints for Headless Capture */
-        body {
+        /* ==================================================================
+           Inlined TRMNL Monochrome Design System (Kindle WP63GW 800x600)
+           ================================================================== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --border-color: #000000;
+            --border-width: 2px;
+            --card-radius: 6px;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Liberation Sans", Helvetica, Arial, sans-serif;
+            --font-mono: "Courier New", Courier, monospace, "Liberation Mono";
+        }
+
+        html, body {
             width: {{ width }}px;
             height: {{ height }}px;
+            max-width: {{ width }}px;
+            max-height: {{ height }}px;
+            background-color: #ffffff;
+            color: #000000;
+            font-family: var(--font-sans);
+            overflow: hidden;
+        }
+
+        .dashboard-container {
+            width: {{ width }}px;
+            height: {{ height }}px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background-color: #ffffff;
+        }
+
+        /* 1. Top Bar */
+        .topbar-card {
+            height: 52px;
+            border: var(--border-width) solid var(--border-color);
+            border-radius: var(--card-radius);
+            padding: 4px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            flex-shrink: 0;
+        }
+
+        .topbar-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .topbar-day {
+            font-size: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            line-height: 1.1;
+        }
+
+        .topbar-date {
+            font-size: 11px;
+            font-weight: 600;
+            color: #222222;
+            line-height: 1.1;
+        }
+
+        .topbar-center {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .topbar-clock {
+            font-size: 28px;
+            font-weight: 900;
+            font-family: var(--font-mono);
+            letter-spacing: -1px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .device-metric {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .metric-icon {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .metric-icon svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            display: block;
+        }
+
+        /* 2. Main Grid Layout */
+        .main-content {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            min-height: 0;
+            height: calc({{ height }}px - 52px - 28px);
+        }
+
+        .left-column {
+            flex: 0 0 58%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+            height: 100%;
+        }
+
+        .right-column {
+            flex: 0 0 calc(42% - 10px);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+            height: 100%;
+        }
+
+        /* Cards Common */
+        .card {
+            border: var(--border-width) solid var(--border-color);
+            border-radius: var(--card-radius);
+            background: #ffffff;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 6px;
+            flex-shrink: 0;
+        }
+
+        .card-title {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .card-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            background: #000000;
+            color: #ffffff;
+            border-radius: 10px;
+        }
+
+        /* 3. Weather Banner */
+        .weather-card {
+            height: 125px;
+            flex-shrink: 0;
+            padding: 8px 12px;
+        }
+
+        .weather-banner-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+        }
+
+        .weather-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .weather-main-icon {
+            width: 54px;
+            height: 54px;
+            flex-shrink: 0;
+        }
+
+        .weather-main-icon svg {
+            width: 54px;
+            height: 54px;
+            fill: currentColor;
+            display: block;
+        }
+
+        .weather-temp-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .weather-temp {
+            font-size: 42px;
+            font-weight: 900;
+            line-height: 0.9;
+            letter-spacing: -1px;
+        }
+
+        .weather-condition {
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .weather-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 3px;
+        }
+
+        .weather-hilow {
+            font-size: 15px;
+            font-weight: 800;
+            display: flex;
+            gap: 8px;
+        }
+
+        .weather-pill {
+            font-size: 12px;
+            font-weight: 700;
+            color: #222222;
+        }
+
+        .weather-details-grid {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* 4. Calendar Agenda Card */
+        .calendar-card {
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .events-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            overflow: hidden;
+        }
+
+        .event-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 3px 0;
+            border-bottom: 1px dashed #777777;
+        }
+
+        .event-row:last-child {
+            border-bottom: none;
+        }
+
+        .event-time-badge {
+            font-size: 11px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            white-space: nowrap;
+            padding: 1px 5px;
+            background: #eeeeee;
+            border: 1px solid #000000;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .event-time-badge.all-day {
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .event-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .event-title {
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+        }
+
+        .event-meta {
+            font-size: 10px;
+            color: #444444;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .section-subhead {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #555555;
+            margin-top: 4px;
+            margin-bottom: 2px;
+        }
+
+        /* 5. Tasks Card */
+        .tasks-card {
+            flex: 1;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            overflow: hidden;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 7px;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+
+        .task-checkbox {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #000000;
+            border-radius: 2px;
+            flex-shrink: 0;
+            margin-top: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .task-checkbox.checked {
+            background-color: #000000;
+        }
+
+        .task-checkbox.checked svg {
+            width: 10px;
+            height: 10px;
+            fill: #ffffff;
+            display: block;
+        }
+
+        .task-text {
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            color: #666666;
+        }
+
+        /* 6. Quick Stats & Notes Card */
+        .stats-card {
+            height: 135px;
+            flex-shrink: 0;
+            padding: 8px 10px;
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #222222;
+        }
+
+        .note-item {
+            display: flex;
+            gap: 4px;
+            line-height: 1.2;
+        }
+
+        .note-bullet {
+            font-weight: 900;
+        }
+
+        .footer-info {
+            margin-top: auto;
+            padding-top: 4px;
+            border-top: 1px solid #cccccc;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #555555;
         }
     </style>
 </head>
@@ -48,7 +477,7 @@
         </header>
 
         <!-- ================================================================
-             2. Main Grid: Left Column (60%), Right Column (40%)
+             2. Main Grid: Left Column (58%), Right Column (42%)
              ================================================================ -->
         <main class="main-content">
             
@@ -77,7 +506,7 @@
                             <div class="weather-details-grid">
                                 <span>Rain: {{ weather.precipitation_probability }}%</span>
                                 <span>Hum: {{ weather.humidity }}%</span>
-                                <span>Wind: {{ weather.wind_speed }} {{ "mph" if weather.unit == "°F" else "km/h" }}</span>
+                                <span>Wind: {{ weather.wind_speed }} {{ "km/h" if weather.unit == "°C" else "mph" }}</span>
                             </div>
                         </div>
                     </div>
@@ -94,7 +523,7 @@
 
                     <div class="events-list">
                         {% if calendar.today %}
-                            {% for ev in calendar.today[:4] %}
+                            {% for ev in calendar.today[:5] %}
                                 <div class="event-row">
                                     <div class="event-time-badge {{ 'all-day' if ev.all_day else '' }}">
                                         {{ ev.time }}
@@ -148,11 +577,11 @@
                     </div>
 
                     <div class="task-list">
-                        {% for task in tasks.tasks[:6] %}
+                        {% for task in tasks.tasks[:7] %}
                             <div class="task-item {{ 'completed' if task.completed else '' }}">
                                 <div class="task-checkbox {{ 'checked' if task.completed else '' }}">
                                     {% if task.completed %}
-                                        <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                                        <svg width="10" height="10" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
                                     {% endif %}
                                 </div>
                                 <div class="task-text">{{ task.text }}</div>
@@ -188,7 +617,7 @@
 
                     <div class="footer-info">
                         <span>Updated: {{ last_updated }}</span>
-                        <span>Kindle TRMNL</span>
+                        <span>Kindle WP63GW</span>
                     </div>
                 </div>
 

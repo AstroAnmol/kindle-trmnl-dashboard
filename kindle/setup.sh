@@ -59,7 +59,20 @@ fi
 echo "🛑 Unloading background book indexer..."
 lipc-set-prop com.lab126.blanket unload 2>/dev/null || true
 
-# 6. Test connection to server
+# 6. Auto-install KUAL Extension to /mnt/us/extensions/kindle-trmnl
+if [ -d "/mnt/us/extensions" ]; then
+    echo "📦 Installing KUAL extension to /mnt/us/extensions/kindle-trmnl..."
+    mkdir -p /mnt/us/extensions/kindle-trmnl/bin
+    cp -f "${SCRIPT_DIR}/kual/kindle-trmnl/config.xml" /mnt/us/extensions/kindle-trmnl/
+    cp -f "${SCRIPT_DIR}/kual/kindle-trmnl/menu.json" /mnt/us/extensions/kindle-trmnl/
+    cp -f "${SCRIPT_DIR}/kual/kindle-trmnl/bin/"*.sh /mnt/us/extensions/kindle-trmnl/bin/
+    chmod +x /mnt/us/extensions/kindle-trmnl/bin/*.sh 2>/dev/null || true
+    echo "✅ KUAL extension installed! You will see 'Kindle TRMNL' in your KUAL menu."
+else
+    echo "ℹ️  /mnt/us/extensions directory not found. Please ensure KUAL is installed."
+fi
+
+# 7. Test connection to server
 echo "🌐 Testing connection to server: $SERVER_URL/api/setup ..."
 lipc-set-prop com.lab126.cmd wirelessEnable 1 2>/dev/null || true
 sleep 4

@@ -1,7 +1,3 @@
-/* ==========================================================================
-   TRMNL Monochrome Design System for Kindle E-Ink Displays
-   ========================================================================== */
-
 * {
     box-sizing: border-box;
     margin: 0;
@@ -22,8 +18,8 @@
 html, body {
     width: 100%;
     height: 100%;
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    background-color: #ffffff;
+    color: #000000;
     font-family: var(--font-sans);
     overflow: hidden;
 }
@@ -31,26 +27,23 @@ html, body {
 .dashboard-container {
     width: 100%;
     height: 100%;
-    padding: 8px 10px;
+    padding: 10px 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    background-color: var(--bg-color);
+    background-color: #ffffff;
 }
 
-/* ==========================================================================
-   1. Top Bar (Header)
-   ========================================================================== */
-
 .topbar-card {
-    height: 48px;
+    height: 52px;
     border: var(--border-width) solid var(--border-color);
     border-radius: var(--card-radius);
-    padding: 4px 12px;
+    padding: 4px 14px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: #ffffff;
+    flex-shrink: 0;
 }
 
 .topbar-left {
@@ -60,7 +53,7 @@ html, body {
 }
 
 .topbar-day {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -81,7 +74,7 @@ html, body {
 }
 
 .topbar-clock {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 900;
     font-family: var(--font-mono);
     letter-spacing: -1px;
@@ -90,13 +83,13 @@ html, body {
 .topbar-right {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
 }
 
 .device-metric {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     font-size: 13px;
     font-weight: 700;
 }
@@ -107,42 +100,41 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 .metric-icon svg {
-    width: 100%;
-    height: 100%;
+    width: 18px;
+    height: 18px;
     fill: currentColor;
+    display: block;
 }
-
-/* ==========================================================================
-   2. Main Grid Layout (60% Left, 40% Right)
-   ========================================================================== */
 
 .main-content {
     flex: 1;
     display: flex;
-    gap: 8px;
+    gap: 10px;
     min-height: 0;
 }
 
 .left-column {
-    flex: 0 0 60%;
+    flex: 0 0 58%;
     display: flex;
     flex-direction: column;
     gap: 8px;
     min-width: 0;
+    height: 100%;
 }
 
 .right-column {
-    flex: 0 0 calc(40% - 8px);
+    flex: 0 0 calc(42% - 10px);
     display: flex;
     flex-direction: column;
     gap: 8px;
     min-width: 0;
+    height: 100%;
 }
 
-/* Common Card Style */
 .card {
     border: var(--border-width) solid var(--border-color);
     border-radius: var(--card-radius);
@@ -160,6 +152,7 @@ html, body {
     padding-bottom: 4px;
     border-bottom: 2px solid var(--border-color);
     margin-bottom: 6px;
+    flex-shrink: 0;
 }
 
 .card-title {
@@ -181,14 +174,10 @@ html, body {
     border-radius: 10px;
 }
 
-/* ==========================================================================
-   3. Weather Banner
-   ========================================================================== */
-
 .weather-card {
-    height: 105px;
+    height: 125px;
     flex-shrink: 0;
-    padding: 6px 10px;
+    padding: 8px 12px;
 }
 
 .weather-banner-content {
@@ -201,18 +190,20 @@ html, body {
 .weather-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
 }
 
 .weather-main-icon {
     width: 54px;
     height: 54px;
+    flex-shrink: 0;
 }
 
 .weather-main-icon svg {
-    width: 100%;
-    height: 100%;
+    width: 54px;
+    height: 54px;
     fill: currentColor;
+    display: block;
 }
 
 .weather-temp-group {
@@ -221,16 +212,16 @@ html, body {
 }
 
 .weather-temp {
-    font-size: 38px;
+    font-size: 42px;
     font-weight: 900;
     line-height: 0.9;
     letter-spacing: -1px;
 }
 
 .weather-condition {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
-    margin-top: 3px;
+    margin-top: 4px;
 }
 
 .weather-right {
@@ -241,33 +232,30 @@ html, body {
 }
 
 .weather-hilow {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 800;
     display: flex;
     gap: 8px;
 }
 
 .weather-pill {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
-    color: #333333;
+    color: #222222;
 }
 
 .weather-details-grid {
     display: flex;
     gap: 10px;
-    margin-top: 2px;
+    margin-top: 4px;
     font-size: 11px;
     font-weight: 600;
 }
 
-/* ==========================================================================
-   4. Calendar Agenda Card
-   ========================================================================== */
-
 .calendar-card {
     flex: 1;
     overflow: hidden;
+    min-height: 0;
 }
 
 .events-list {
@@ -298,6 +286,7 @@ html, body {
     background: #eeeeee;
     border: 1px solid #000000;
     border-radius: 3px;
+    flex-shrink: 0;
 }
 
 .event-time-badge.all-day {
@@ -340,13 +329,10 @@ html, body {
     margin-bottom: 2px;
 }
 
-/* ==========================================================================
-   5. Tasks & Checklist Card
-   ========================================================================== */
-
 .tasks-card {
     flex: 1;
     overflow: hidden;
+    min-height: 0;
 }
 
 .task-list {
@@ -362,7 +348,7 @@ html, body {
     gap: 7px;
     font-size: 12px;
     font-weight: 600;
-    line-height: 1.2;
+    line-height: 1.25;
 }
 
 .task-checkbox {
@@ -385,6 +371,7 @@ html, body {
     width: 10px;
     height: 10px;
     fill: #ffffff;
+    display: block;
 }
 
 .task-text {
@@ -397,14 +384,10 @@ html, body {
     color: #666666;
 }
 
-/* ==========================================================================
-   6. Quick Stats / Notes Card
-   ========================================================================== */
-
 .stats-card {
-    height: 110px;
+    height: 135px;
     flex-shrink: 0;
-    padding: 6px 10px;
+    padding: 8px 10px;
 }
 
 .notes-list {
