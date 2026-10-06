@@ -3,11 +3,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width={{ width }}, height={{ height }}, initial-scale=1.0">
-    <title>Kindle TRMNL Dashboard</title>
+    <meta name="viewport" content="width={{ width }}, height={{ height }}, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="refresh" content="{{ refresh_rate_seconds | default(900) }}">
+    <title>{{ now_day }}, {{ now_date }}</title>
     <style>
         /* ==================================================================
-           Inlined TRMNL Monochrome Design System (Kindle WP63GW 800x600)
+           TRMNL Monochrome Design System (Kindle Portrait 600x800)
            ================================================================== */
         * {
             box-sizing: border-box;
@@ -40,115 +41,11 @@
         .dashboard-container {
             width: {{ width }}px;
             height: {{ height }}px;
-            padding: 10px 12px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             gap: 8px;
             background-color: #ffffff;
-        }
-
-        /* 1. Top Bar */
-        .topbar-card {
-            height: 52px;
-            border: var(--border-width) solid var(--border-color);
-            border-radius: var(--card-radius);
-            padding: 4px 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #ffffff;
-            flex-shrink: 0;
-        }
-
-        .topbar-left {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .topbar-day {
-            font-size: 16px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            line-height: 1.1;
-        }
-
-        .topbar-date {
-            font-size: 11px;
-            font-weight: 600;
-            color: #222222;
-            line-height: 1.1;
-        }
-
-        .topbar-center {
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-        }
-
-        .topbar-clock {
-            font-size: 28px;
-            font-weight: 900;
-            font-family: var(--font-mono);
-            letter-spacing: -1px;
-        }
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .device-metric {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .metric-icon {
-            width: 18px;
-            height: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .metric-icon svg {
-            width: 18px;
-            height: 18px;
-            fill: currentColor;
-            display: block;
-        }
-
-        /* 2. Main Grid Layout */
-        .main-content {
-            flex: 1;
-            display: flex;
-            gap: 10px;
-            min-height: 0;
-            height: calc({{ height }}px - 52px - 28px);
-        }
-
-        .left-column {
-            flex: 0 0 57%;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-width: 0;
-            height: 100%;
-        }
-
-        .right-column {
-            flex: 0 0 calc(43% - 10px);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-width: 0;
-            height: 100%;
         }
 
         /* Common Card Styles */
@@ -191,9 +88,9 @@
             border-radius: 10px;
         }
 
-        /* 3. Weather Banner */
+        /* 1. Weather Banner (Full Width Top Card) */
         .weather-card {
-            height: 118px;
+            height: 94px;
             flex-shrink: 0;
             padding: 7px 12px;
         }
@@ -212,14 +109,14 @@
         }
 
         .weather-main-icon {
-            width: 50px;
-            height: 50px;
+            width: 44px;
+            height: 44px;
             flex-shrink: 0;
         }
 
         .weather-main-icon svg {
-            width: 50px;
-            height: 50px;
+            width: 44px;
+            height: 44px;
             fill: currentColor;
             display: block;
         }
@@ -230,14 +127,14 @@
         }
 
         .weather-temp {
-            font-size: 40px;
+            font-size: 36px;
             font-weight: 900;
-            line-height: 0.9;
+            line-height: 0.95;
             letter-spacing: -1px;
         }
 
         .weather-condition {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             margin-top: 3px;
         }
@@ -250,34 +147,72 @@
         }
 
         .weather-hilow {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 800;
             display: flex;
             gap: 8px;
         }
 
         .weather-pill {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             color: #222222;
         }
 
         .weather-details-grid {
             display: flex;
-            gap: 9px;
-            margin-top: 4px;
-            font-size: 10.5px;
+            gap: 8px;
+            margin-top: 3px;
+            font-size: 10px;
             font-weight: 600;
         }
 
-        /* 4. Monthly Calendar View (Google Calendar Style) */
+        .weather-time-tag {
+            font-size: 10px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            background: #000000;
+            color: #ffffff;
+            padding: 1px 4px;
+            border-radius: 2px;
+            margin-left: 4px;
+        }
+
+        /* 2. Main Grid Layout (Portrait: 2 Columns) */
+        .main-content {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+            min-height: 0;
+            height: calc({{ height }}px - 20px - 94px - 8px);
+        }
+
+        .left-column {
+            flex: 0 0 54%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+            height: 100%;
+        }
+
+        .right-column {
+            flex: 0 0 calc(46% - 8px);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+            height: 100%;
+        }
+
+        /* 3. Monthly Calendar View */
         .month-cal-card {
             flex: 1;
             display: flex;
             flex-direction: column;
             min-height: 0;
             overflow: hidden;
-            padding: 6px 8px;
+            padding: 6px 7px;
         }
 
         .cal-header-row {
@@ -290,12 +225,12 @@
         }
 
         .cal-day-header {
-            font-size: 9.5px;
+            font-size: 9px;
             font-weight: 800;
             text-transform: uppercase;
-            padding: 2px 0;
+            padding: 1px 0;
             color: #333333;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         .cal-grid {
@@ -310,7 +245,7 @@
         .cal-cell {
             border: 1px solid #c8c8c8;
             border-radius: 3px;
-            padding: 2px 3px;
+            padding: 2px;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
@@ -335,25 +270,25 @@
             justify-content: space-between;
             align-items: center;
             line-height: 1;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
 
         .cal-date-num {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 800;
         }
 
         .cal-cell.is-today .cal-date-num {
             background: #000000;
             color: #ffffff;
-            padding: 1px 4px;
-            border-radius: 3px;
-            font-size: 10.5px;
+            padding: 1px 3px;
+            border-radius: 2px;
+            font-size: 9.5px;
         }
 
         .cal-event-dot {
-            width: 4px;
-            height: 4px;
+            width: 3.5px;
+            height: 3.5px;
             border-radius: 50%;
             background: #000000;
             display: inline-block;
@@ -362,16 +297,16 @@
         .cal-events-wrap {
             display: flex;
             flex-direction: column;
-            gap: 1.5px;
+            gap: 1px;
             overflow: hidden;
             flex: 1;
         }
 
         .cal-mini-event {
-            font-size: 8px;
+            font-size: 7.5px;
             font-weight: 700;
             line-height: 1.1;
-            padding: 1px 2px;
+            padding: 0 1px;
             background: #eeeeee;
             border: 1px solid #444444;
             border-radius: 2px;
@@ -388,101 +323,16 @@
         }
 
         .cal-more-dots {
-            font-size: 7.5px;
+            font-size: 7px;
             font-weight: 800;
             color: #444444;
             line-height: 1;
         }
 
-        /* 5. Right Column Cards */
-        .tasks-card-compact {
-            height: 130px;
-            flex-shrink: 0;
-            overflow: hidden;
-        }
-
-        .task-list {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            overflow: hidden;
-        }
-
-        .task-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 6px;
-            font-size: 11.5px;
-            font-weight: 600;
-            line-height: 1.2;
-        }
-
-        .task-checkbox {
-            width: 13px;
-            height: 13px;
-            border: 2px solid #000000;
-            border-radius: 2px;
-            flex-shrink: 0;
-            margin-top: 1px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .task-checkbox.checked {
-            background-color: #000000;
-        }
-
-        .task-checkbox.checked svg {
-            width: 9px;
-            height: 9px;
-            fill: #ffffff;
-            display: block;
-        }
-
-        .task-text {
-            flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .task-item.completed .task-text {
-            text-decoration: line-through;
-            color: #666666;
-        }
-
-        .notes-card-compact {
-            height: 104px;
-            flex-shrink: 0;
-            overflow: hidden;
-        }
-
-        .notes-list {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            font-size: 10.5px;
-            font-weight: 600;
-            color: #222222;
-        }
-
-        .note-item {
-            display: flex;
-            gap: 4px;
-            line-height: 1.2;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .note-bullet {
-            font-weight: 900;
-        }
-
-        /* 6. Upcoming Events / Agenda Card (Beneath Notes) */
+        /* 4. Upcoming Agenda Card */
         .agenda-card {
-            flex: 1;
+            height: 250px;
+            flex-shrink: 0;
             display: flex;
             flex-direction: column;
             min-height: 0;
@@ -500,8 +350,8 @@
         .agenda-item {
             display: flex;
             flex-direction: column;
-            padding: 3px 0;
-            border-bottom: 1px dashed #888888;
+            padding: 2px 0;
+            border-bottom: 1px dashed #aaaaaa;
         }
 
         .agenda-item:last-child {
@@ -511,15 +361,15 @@
         .agenda-top-row {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
         }
 
         .agenda-badge {
-            font-size: 9px;
+            font-size: 8.5px;
             font-weight: 800;
             font-family: var(--font-mono);
             white-space: nowrap;
-            padding: 1px 4px;
+            padding: 0 3px;
             background: #000000;
             color: #ffffff;
             border-radius: 2px;
@@ -528,7 +378,7 @@
         }
 
         .agenda-time {
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: 800;
             font-family: var(--font-mono);
             color: #333333;
@@ -536,7 +386,7 @@
         }
 
         .agenda-title {
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
@@ -546,11 +396,104 @@
         }
 
         .agenda-meta {
-            font-size: 9.5px;
+            font-size: 9px;
             color: #555555;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        /* 5. Tasks Card */
+        .tasks-card-compact {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            overflow: hidden;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        .task-checkbox {
+            width: 12px;
+            height: 12px;
+            border: 2px solid #000000;
+            border-radius: 2px;
+            flex-shrink: 0;
+            margin-top: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .task-checkbox.checked {
+            background-color: #000000;
+        }
+
+        .task-checkbox.checked svg {
+            width: 8px;
+            height: 8px;
+            fill: #ffffff;
+            display: block;
+        }
+
+        .task-text {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            color: #666666;
+        }
+
+        /* 6. Quick Notes Card */
+        .notes-card-compact {
+            height: 250px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: #222222;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .note-item {
+            display: flex;
+            gap: 4px;
+            line-height: 1.25;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .note-bullet {
+            font-weight: 900;
         }
 
         .footer-info {
@@ -559,7 +502,7 @@
             border-top: 1px solid #cccccc;
             display: flex;
             justify-content: space-between;
-            font-size: 8.5px;
+            font-size: 8px;
             font-weight: 700;
             text-transform: uppercase;
             color: #555555;
@@ -571,78 +514,51 @@
     <div class="dashboard-container">
         
         <!-- ================================================================
-             1. Top Bar: Day, Date, Large Clock, Battery, Wi-Fi
+             1. Weather Banner Card (Full Width Top Card)
              ================================================================ -->
-        <header class="topbar-card">
-            <div class="topbar-left">
-                <div class="topbar-day">{{ now_day }}</div>
-                <div class="topbar-date">{{ now_date }}</div>
-            </div>
-
-            <div class="topbar-center">
-                <div class="topbar-clock">{{ now_time }}</div>
-            </div>
-
-            <div class="topbar-right">
-                <div class="device-metric" title="Kindle Wi-Fi Signal">
-                    <span class="metric-icon">
-                        {{ icons.icon_wifi(telemetry.wifi_bars) }}
-                    </span>
-                    <span>{{ telemetry.signal_strength }} dBm</span>
-                </div>
-
-                <div class="device-metric" title="Kindle Battery Level">
-                    <span class="metric-icon">
-                        {{ icons.icon_battery(telemetry.battery_icon) }}
-                    </span>
-                    <span>{{ telemetry.battery_percent }}%</span>
-                </div>
-            </div>
-        </header>
-
-        <!-- ================================================================
-             2. Main Grid: Left Column (57%), Right Column (43%)
-             ================================================================ -->
-        <main class="main-content">
-            
-            <!-- Left Column: Weather Banner + Monthly Calendar Grid -->
-            <section class="left-column">
-                
-                <!-- Weather Banner Card -->
-                <div class="card weather-card">
-                    <div class="weather-banner-content">
-                        <div class="weather-left">
-                            <div class="weather-main-icon">
-                                {{ icons.icon_weather(weather.icon) }}
-                            </div>
-                            <div class="weather-temp-group">
-                                <div class="weather-temp">{{ weather.temperature }}{{ weather.unit }}</div>
-                                <div class="weather-condition">{{ weather.condition }}</div>
-                            </div>
-                        </div>
-
-                        <div class="weather-right">
-                            <div class="weather-hilow">
-                                <span>&darr; {{ weather.temp_min }}{{ weather.unit }}</span>
-                                <span>&uarr; {{ weather.temp_max }}{{ weather.unit }}</span>
-                            </div>
-                            <div class="weather-pill">{{ weather.location }}</div>
-                            <div class="weather-details-grid">
-                                <span>Rain: {{ weather.precipitation_probability }}%</span>
-                                <span>Hum: {{ weather.humidity }}%</span>
-                                <span>Wind: {{ weather.wind_speed }} {{ "km/h" if weather.unit == "°C" else "mph" }}</span>
-                            </div>
-                        </div>
+        <div class="card weather-card">
+            <div class="weather-banner-content">
+                <div class="weather-left">
+                    <div class="weather-main-icon">
+                        {{ icons.icon_weather(weather.icon) }}
+                    </div>
+                    <div class="weather-temp-group">
+                        <div class="weather-temp">{{ weather.temperature }}{{ weather.unit }}</div>
+                        <div class="weather-condition">{{ weather.condition }}</div>
                     </div>
                 </div>
 
-                <!-- Monthly Calendar View (Google Calendar Style) -->
+                <div class="weather-right">
+                    <div class="weather-hilow">
+                        <span>&darr; {{ weather.temp_min }}{{ weather.unit }}</span>
+                        <span>&uarr; {{ weather.temp_max }}{{ weather.unit }}</span>
+                        <span class="weather-time-tag">{{ now_time }}</span>
+                    </div>
+                    <div class="weather-pill">{{ weather.location }}</div>
+                    <div class="weather-details-grid">
+                        <span>Rain: {{ weather.precipitation_probability }}%</span>
+                        <span>Hum: {{ weather.humidity }}%</span>
+                        <span>Wind: {{ weather.wind_speed }} {{ "km/h" if weather.unit == "°C" else "mph" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             2. Main Grid: Left Column (54%), Right Column (46%)
+             ================================================================ -->
+        <main class="main-content">
+            
+            <!-- Left Column: Monthly Calendar + Upcoming Agenda -->
+            <section class="left-column">
+                
+                <!-- Monthly Calendar View -->
                 <div class="card month-cal-card">
                     <div class="card-header">
                         <div class="card-title">
                             <span>{{ calendar.month_grid.month_title }}</span>
                         </div>
-                        <span class="card-badge">Monthly Calendar</span>
+                        <span class="card-badge">Calendar</span>
                     </div>
 
                     <div class="cal-header-row">
@@ -680,61 +596,7 @@
                     </div>
                 </div>
 
-            </section>
-
-            <!-- Right Column: Tasks + Quick Notes + Upcoming Agenda -->
-            <section class="right-column">
-                
-                <!-- 1. Tasks Checklist Card -->
-                <div class="card tasks-card-compact">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <span>Tasks & Focus</span>
-                        </div>
-                        <span class="card-badge">{{ tasks.completed_count }}/{{ tasks.total }} Done</span>
-                    </div>
-
-                    <div class="task-list">
-                        {% for task in tasks.tasks[:3] %}
-                            <div class="task-item {{ 'completed' if task.completed else '' }}">
-                                <div class="task-checkbox {{ 'checked' if task.completed else '' }}">
-                                    {% if task.completed %}
-                                        <svg width="9" height="9" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-                                    {% endif %}
-                                </div>
-                                <div class="task-text">{{ task.text }}</div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <!-- 2. Quick Notes Card -->
-                <div class="card notes-card-compact">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <span>Quick Notes</span>
-                        </div>
-                        <span class="card-badge">Notes</span>
-                    </div>
-
-                    <div class="notes-list">
-                        {% if tasks.notes %}
-                            {% for note in tasks.notes[:2] %}
-                                <div class="note-item">
-                                    <span class="note-bullet">&bull;</span>
-                                    <span>{{ note }}</span>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="note-item">
-                                <span class="note-bullet">&bull;</span>
-                                <span>Keep Kindle in Wi-Fi range for updates.</span>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- 3. Upcoming Agenda (Beneath Quick Notes) -->
+                <!-- Upcoming Agenda Events -->
                 <div class="card agenda-card">
                     <div class="card-header">
                         <div class="card-title">
@@ -745,7 +607,7 @@
 
                     <div class="agenda-list">
                         {% if calendar.next_events %}
-                            {% for ev in calendar.next_events[:4] %}
+                            {% for ev in calendar.next_events[:5] %}
                                 <div class="agenda-item">
                                     <div class="agenda-top-row">
                                         <span class="agenda-badge">{{ ev.day_badge }}</span>
@@ -764,6 +626,60 @@
                                 </div>
                                 <div class="agenda-title">No upcoming events scheduled</div>
                                 <div class="agenda-meta">Enjoy your clear schedule!</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- Right Column: Tasks Checklist + Quick Notes -->
+            <section class="right-column">
+                
+                <!-- Tasks Checklist Card -->
+                <div class="card tasks-card-compact">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>Tasks & Focus</span>
+                        </div>
+                        <span class="card-badge">{{ tasks.completed_count }}/{{ tasks.total }} Done</span>
+                    </div>
+
+                    <div class="task-list">
+                        {% for task in tasks.tasks[:8] %}
+                            <div class="task-item {{ 'completed' if task.completed else '' }}">
+                                <div class="task-checkbox {{ 'checked' if task.completed else '' }}">
+                                    {% if task.completed %}
+                                        <svg width="8" height="8" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                                    {% endif %}
+                                </div>
+                                <div class="task-text">{{ task.text }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Quick Notes Card -->
+                <div class="card notes-card-compact">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>Quick Notes</span>
+                        </div>
+                        <span class="card-badge">Notes</span>
+                    </div>
+
+                    <div class="notes-list">
+                        {% if tasks.notes %}
+                            {% for note in tasks.notes[:5] %}
+                                <div class="note-item">
+                                    <span class="note-bullet">&bull;</span>
+                                    <span>{{ note }}</span>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="note-item">
+                                <span class="note-bullet">&bull;</span>
+                                <span>Kindle TRMNL Dashboard active.</span>
                             </div>
                         {% endif %}
                     </div>

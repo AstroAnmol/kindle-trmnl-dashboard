@@ -13,9 +13,9 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     refresh_rate_seconds: int = 900
 
-    # Kindle WP63GW (7th Gen Basic) Landscape: 800x600
-    kindle_screen_width: int = 800
-    kindle_screen_height: int = 600
+    # Kindle WP63GW (7th Gen Basic) Portrait: 600x800
+    kindle_screen_width: int = 600
+    kindle_screen_height: int = 800
     screen_orientation: int = 0  # 0, 90, 180, 270
 
     image_format: str = "png"  # png or bmp

@@ -40,42 +40,34 @@ def _render_fallback_pillow(context: Dict[str, Any]) -> bytes:
     img = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(img)
 
-    # Topbar Border
-    draw.rectangle([(10, 10), (width - 10, 55)], outline=(0, 0, 0), width=2)
-    # Main Column Dividers
-    left_w = int(width * 0.6)
-    draw.rectangle([(10, 65), (left_w - 5, height - 10)], outline=(0, 0, 0), width=2)
-    draw.rectangle([(left_w + 5, 65), (width - 10, height - 10)], outline=(0, 0, 0), width=2)
-
-    # Draw Text
-    draw.text((20, 20), f"{context.get('now_day', '')}, {context.get('now_date', '')}", fill=(0, 0, 0))
-    draw.text((width // 2 - 40, 18), context.get("now_time", ""), fill=(0, 0, 0))
-    telemetry = context.get("telemetry", {})
-    batt = telemetry.get("battery_percent", 100)
-    rssi = telemetry.get("signal_strength", -60)
-    draw.text((width - 160, 20), f"WiFi: {rssi}dBm  Batt: {batt}%", fill=(0, 0, 0))
-
-    # Weather
+    # Weather Top Card (full width)
+    draw.rectangle([(10, 10), (width - 10, 100)], outline=(0, 0, 0), width=2)
     w = context.get("weather", {})
-    draw.text((25, 80), f"WEATHER: {w.get('temperature', '')}{w.get('unit', '')} - {w.get('condition', '')}", fill=(0, 0, 0))
-    draw.text((25, 105), f"High: {w.get('temp_max', '')}° | Low: {w.get('temp_min', '')}° | Rain: {w.get('precipitation_probability', '')}%", fill=(0, 0, 0))
+    draw.text((25, 20), f"WEATHER: {w.get('temperature', '')}{w.get('unit', '')} - {w.get('condition', '')}", fill=(0, 0, 0))
+    draw.text((25, 48), f"High: {w.get('temp_max', '')}° | Low: {w.get('temp_min', '')}° | Rain: {w.get('precipitation_probability', '')}%", fill=(0, 0, 0))
+    draw.text((25, 74), f"Loc: {w.get('location', '')} | Updated: {context.get('now_time', '')}", fill=(0, 0, 0))
 
-    # Calendar
-    draw.text((25, 140), "TODAY'S AGENDA:", fill=(0, 0, 0))
+    # Main Columns
+    left_w = int(width * 0.54)
+    draw.rectangle([(10, 108), (left_w - 5, height - 10)], outline=(0, 0, 0), width=2)
+    draw.rectangle([(left_w + 5, 108), (width - 10, height - 10)], outline=(0, 0, 0), width=2)
+
+    # Calendar / Agenda
+    draw.text((20, 118), "UPCOMING EVENTS:", fill=(0, 0, 0))
     cal = context.get("calendar", {})
-    today_events = cal.get("today", [])
-    y = 165
-    for ev in today_events[:4]:
-        draw.text((30, y), f"• {ev.get('time', '')} : {ev.get('title', '')}", fill=(0, 0, 0))
+    events = cal.get("next_events", [])
+    y = 145
+    for ev in events[:8]:
+        draw.text((25, y), f"• {ev.get('day_badge', '')} {ev.get('time', '')} {ev.get('title', '')[:22]}", fill=(0, 0, 0))
         y += 24
 
     # Tasks
-    draw.text((left_w + 20, 80), "TASKS & FOCUS:", fill=(0, 0, 0))
+    draw.text((left_w + 15, 118), "TASKS & FOCUS:", fill=(0, 0, 0))
     tasks = context.get("tasks", {}).get("tasks", [])
-    ty = 110
-    for t in tasks[:6]:
+    ty = 145
+    for t in tasks[:10]:
         mark = "[X]" if t.get("completed") else "[ ]"
-        draw.text((left_w + 25, ty), f"{mark} {t.get('text', '')}", fill=(0, 0, 0))
+        draw.text((left_w + 20, ty), f"{mark} {t.get('text', '')[:20]}", fill=(0, 0, 0))
         ty += 24
 
     buf = io.BytesIO()

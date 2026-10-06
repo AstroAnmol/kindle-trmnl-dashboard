@@ -135,6 +135,7 @@ async def build_dashboard_context() -> Dict[str, Any]:
         "calendar": calendar_data,
         "tasks": tasks_data,
         "telemetry": telemetry_data,
+        "refresh_rate_seconds": settings.refresh_rate_seconds,
     }
 
 # ==============================================================================
@@ -161,7 +162,8 @@ async def api_display(
     force: bool = Query(False, alias="force")
 ):
     """
-    Renders optimized binary image (PNG or BMP) for Kindle e-ink display.
+    Renders optimized binary image (PNG or BMP) for Kindle e-ink display,
+    or HTML page if viewed directly in a browser (e.g. Kindle Experimental Browser).
     Validates Kindle MAC address/Token and returns 'Refresh-Rate' & 'Image-Format' headers.
     """
     device_id = id_header or token_header or mac_param or "anonymous"
@@ -175,6 +177,23 @@ async def api_display(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Unauthorized Kindle Device ID or Access Token"
             )
+
+    # Return HTML directly if accessed from a browser or explicitly requested
+    accept_header = request.headers.get("accept", "")
+    wants_html = format_param == "html" or (
+        "text/html" in accept_header and format_param not in ["png", "bmp"]
+    )
+    if wants_html:
+        context = await build_dashboard_context()
+        html = render_html_content(context)
+        return HTMLResponse(
+            content=html,
+            headers={
+                "Cache-Control": "no-store, no-cache, must-revalidate",
+                "Refresh": str(settings.refresh_rate_seconds),
+                "X-Device-Id": device_id,
+            }
+        )
 
     eff_rot = rotate if rotate is not None else orientation
     context = await build_dashboard_context()
