@@ -209,14 +209,14 @@ fi
 # ------------------------------------------------------------------------------
 if [ $SLEEP_MODE -eq 1 ]; then
     INTERVAL="$DEFAULT_INTERVAL"
-    log "Arming RTC alarm for ${INTERVAL}s and entering sleep..."
-    echo 0 > /sys/class/rtc/rtc0/wakealarm 2>/dev/null || true
-    if ! echo "+$INTERVAL" > /sys/class/rtc/rtc0/wakealarm 2>/dev/null; then
-        echo $(( $(date +%s) + INTERVAL )) > /sys/class/rtc/rtc0/wakealarm 2>/dev/null || true
-    fi
-    lipc-set-prop -i com.lab126.powerd rtcWakeup "$INTERVAL" 2>/dev/null || true
-    if ! echo "mem" > /sys/power/state 2>/dev/null; then
-        log "Kernel refused suspend; sleeping awake..."
+    if [ -f "/mnt/us/suspend.enabled" ] || [ "$SUSPEND_ENABLED" = "1" ]; then
+        log "Arming RTC alarm for ${INTERVAL}s and entering deep sleep..."
+        echo 0 > /sys/class/rtc/rtc0/wakealarm 2>/dev/null || true
+        echo "+$INTERVAL" > /sys/class/rtc/rtc0/wakealarm 2>/dev/null || true
+        lipc-set-prop -i com.lab126.powerd rtcWakeup "$INTERVAL" 2>/dev/null || true
+        echo "mem" > /sys/power/state 2>/dev/null || sleep "$INTERVAL"
+    else
+        log "Sleeping awake for ${INTERVAL}s (touchscreen and KUAL active)..."
         sleep "$INTERVAL"
     fi
     log "Woke from sleep cycle."

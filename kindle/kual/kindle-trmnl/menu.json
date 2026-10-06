@@ -9,7 +9,7 @@
           "action": "/bin/sh",
           "params": "bin/once.sh",
           "priority": 1,
-          "exitmenu": true,
+          "exitmenu": false,
           "refresh": false,
           "status": false
         },
@@ -18,7 +18,7 @@
           "action": "/bin/sh",
           "params": "bin/start.sh",
           "priority": 2,
-          "exitmenu": true,
+          "exitmenu": false,
           "refresh": false,
           "status": false
         },
