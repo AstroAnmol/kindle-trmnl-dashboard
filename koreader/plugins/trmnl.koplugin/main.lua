@@ -9,9 +9,8 @@ local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local InputDialog = require("ui/widget/inputdialog")
-local ImageViewer = require("ui/widget/imageviewer")
-local DataStorage = require("datastorage")
 local Device = require("device")
+local NetworkMgr = require("ui/network/networkmgr")
 local logger = require("logger")
 local _ = require("gettext")
 
@@ -25,18 +24,23 @@ function TrmnlPlugin:init()
     self.auto_update_on_sleep = G_reader_settings:isTrue("trmnl_auto_update_on_sleep", true)
     self.periodic_interval = G_reader_settings:readSetting("trmnl_periodic_interval") or 900 -- default 15 min
 
-    -- Setup screensaver directory
-    local data_dir = DataStorage:getDataDir()
-    self.screensaver_dir = data_dir .. "/screensavers"
+    -- Standard KOReader screensavers path on Kindle
+    self.screensaver_dir = "/mnt/us/koreader/screensavers"
     self.screensaver_file = self.screensaver_dir .. "/dashboard.png"
 
-    -- Ensure directory exists
-    os.execute(string.format("mkdir -p %q", self.screensaver_dir))
+    -- Ensure directory exists safely
+    pcall(function()
+        local lfs = require("libs/libkoreader-lfs")
+        lfs.mkdir(self.screensaver_dir)
+    end)
+    pcall(function()
+        os.execute("mkdir -p /mnt/us/koreader/screensavers 2>/dev/null")
+    end)
 
-    -- Auto-configure KOReader to use our screensaver directory
+    -- Configure KOReader screensaver
     self:configureKOReaderScreensaver()
 
-    -- Start periodic background refresh
+    -- Start background periodic refresh timer if configured
     self:schedulePeriodicRefresh()
 
     -- Register into KOReader Main Menu
@@ -46,104 +50,114 @@ function TrmnlPlugin:init()
 end
 
 function TrmnlPlugin:configureKOReaderScreensaver()
-    -- Set KOReader's sleep screen to show random image from our directory
-    -- (Since dashboard.png is the image in this directory, it will always be displayed)
-    G_reader_settings:saveSetting("screensaver_type", "random_image")
-    G_reader_settings:saveSetting("screensaver_dir", self.screensaver_dir)
+    pcall(function()
+        G_reader_settings:saveSetting("screensaver_type", "random_image")
+        G_reader_settings:saveSetting("screensaver_dir", self.screensaver_dir)
+        if G_reader_settings.flush then
+            G_reader_settings:flush()
+        end
+    end)
 end
 
 function TrmnlPlugin:downloadDashboard(callback)
-    local dest_tmp = self.screensaver_file .. ".tmp"
-    local dest_final = self.screensaver_file
     local url = self.server_url
+    logger.info("TRMNL: Starting download from: " .. tostring(url))
 
-    -- First try Lua socket.http
-    local success = false
-    local http_ok, http = pcall(require, "socket.http")
-    local ltn12_ok, ltn12 = pcall(require, "ltn12")
+    -- Ensure Wi-Fi is connected via NetworkMgr
+    NetworkMgr:runWhenOnline(function()
+        local ok, result = pcall(function()
+            local socket = require("socket")
+            local http = require("socket.http")
+            local ltn12 = require("ltn12")
 
-    if http_ok and ltn12_ok then
-        local file = io.open(dest_tmp, "wb")
-        if file then
-            http.TIMEOUT = 12
-            local _, code, _ = http.request{
+            local sink = {}
+            local req = {
                 url = url,
-                sink = ltn12.sink.file(file),
+                sink = ltn12.sink.table(sink),
                 headers = {
                     ["User-Agent"] = "KOReader-TRMNL/1.0",
-                    ["Accept"] = "image/png",
-                }
+                    ["Accept"] = "image/png,image/*",
+                },
+                create = function()
+                    local tcp = socket.tcp()
+                    if tcp then
+                        tcp:settimeout(15)
+                    end
+                    return tcp
+                end,
             }
-            file:close()
-            if code == 200 then
-                os.rename(dest_tmp, dest_final)
-                success = true
+
+            -- Request with error safety
+            local _, code, headers, status = http.request(req)
+            logger.info("TRMNL: HTTP response code: " .. tostring(code))
+
+            if code == 200 and #sink > 0 then
+                local image_bytes = table.concat(sink)
+                if #image_bytes > 500 then
+                    local f, err = io.open(self.screensaver_file, "wb")
+                    if f then
+                        f:write(image_bytes)
+                        f:close()
+                        logger.info("TRMNL: Successfully saved dashboard (" .. #image_bytes .. " bytes)")
+                        return true
+                    else
+                        logger.warn("TRMNL: Failed to write to file: " .. tostring(err))
+                        return false, "Write error: " .. tostring(err)
+                    end
+                else
+                    return false, "Image response too small"
+                end
             else
-                os.remove(dest_tmp)
+                return false, "HTTP " .. tostring(code or status or "timeout")
             end
-        end
-    end
+        end)
 
-    -- Fallback to wget / curl if Lua socket failed or timed out
-    if not success then
-        local cmd = string.format(
-            "wget -q -T 15 -O %q %q || curl -s -m 15 -o %q %q",
-            dest_final, url, dest_final, url
-        )
-        local ret = os.execute(cmd)
-        if ret == 0 or ret == true then
+        local success = false
+        local err_msg = "Unknown error"
+        if ok and result == true then
             success = true
+        elseif not ok then
+            err_msg = tostring(result)
+        elseif type(result) == "string" then
+            err_msg = result
+        else
+            err_msg = tostring(result)
         end
-    end
 
-    if callback then
-        callback(success)
-    end
-    return success
+        if callback then
+            callback(success, err_msg)
+        end
+    end)
 end
 
 function TrmnlPlugin:updateNow(show_feedback)
     if show_feedback then
         UIManager:show(InfoMessage:new{
-            text = _("Downloading dashboard from server..."),
+            text = _("Connecting to Wi-Fi and downloading dashboard..."),
             timeout = 3,
         })
     end
 
     UIManager:scheduleIn(0.1, function()
-        self:downloadDashboard(function(success)
+        self:downloadDashboard(function(success, err_msg)
             if success then
                 self:configureKOReaderScreensaver()
                 if show_feedback then
                     UIManager:show(InfoMessage:new{
-                        text = _("Dashboard updated successfully!\nIt will be displayed when sleeping."),
+                        text = _("Dashboard updated successfully!\nWill show as screensaver when sleeping."),
                         timeout = 4,
                     })
                 end
             else
                 if show_feedback then
                     UIManager:show(InfoMessage:new{
-                        text = _("Failed to download dashboard.\nPlease check Wi-Fi connection and server address:\n") .. self.server_url,
-                        timeout = 5,
+                        text = _("Failed to download dashboard:\n") .. tostring(err_msg) .. _("\nCheck Wi-Fi and URL: ") .. tostring(self.server_url),
+                        timeout = 6,
                     })
                 end
             end
         end)
     end)
-end
-
-function TrmnlPlugin:showDashboardFullscreen()
-    local file = io.open(self.screensaver_file, "r")
-    if file then
-        file:close()
-        local image_viewer = ImageViewer:new{
-            image_file = self.screensaver_file,
-            title = _("TRMNL Dashboard"),
-        }
-        UIManager:show(image_viewer)
-    else
-        self:updateNow(true)
-    end
 end
 
 function TrmnlPlugin:schedulePeriodicRefresh()
@@ -157,16 +171,18 @@ function TrmnlPlugin:schedulePeriodicRefresh()
     end
 
     self.periodic_task = function()
-        self:downloadDashboard(function(ok)
-            if ok then
-                self:configureKOReaderScreensaver()
-                if Device.screen_saver_mode then
-                    pcall(function()
-                        local Screensaver = require("ui/screensaver")
-                        Screensaver:show()
-                    end)
+        pcall(function()
+            self:downloadDashboard(function(ok)
+                if ok then
+                    self:configureKOReaderScreensaver()
+                    if Device.screen_saver_mode then
+                        pcall(function()
+                            local Screensaver = require("ui/screensaver")
+                            Screensaver:show()
+                        end)
+                    end
                 end
-            end
+            end)
         end)
         -- Re-schedule next execution
         if self.periodic_interval > 0 then
@@ -179,12 +195,13 @@ end
 
 -- Hook into KOReader power suspend event
 function TrmnlPlugin:onSuspend()
-    -- Immediate update when user taps power button to sleep
     if self.auto_update_on_sleep then
-        self:downloadDashboard(function(ok)
-            if ok then
-                self:configureKOReaderScreensaver()
-            end
+        pcall(function()
+            self:downloadDashboard(function(ok)
+                if ok then
+                    self:configureKOReaderScreensaver()
+                end
+            end)
         end)
     end
 
@@ -217,12 +234,6 @@ function TrmnlPlugin:addToMainMenu(menu_items)
                 text = _("Update Dashboard Now"),
                 callback = function()
                     self:updateNow(true)
-                end,
-            },
-            {
-                text = _("View Dashboard Fullscreen"),
-                callback = function()
-                    self:showDashboardFullscreen()
                 end,
             },
             {
