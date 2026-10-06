@@ -258,5 +258,24 @@ With the Online Screensaver architecture, a Kindle WP63GW runs for **4 to 8 week
 
 ---
 
+## 📖 Alternative Client: KOReader Integration
+
+If you prefer using **KOReader** (which completely bypasses Amazon's "Special Offers" lockscreen ads and system updates), we provide a dedicated KOReader plugin: `trmnl.koplugin`.
+
+### Installing into KOReader:
+```bash
+cd koreader
+./install.sh
+```
+Or copy `koreader/plugins/trmnl.koplugin` directly to `Kindle/koreader/plugins/`.
+
+### Activating in KOReader:
+1. In KOReader, tap the top menu ➜ **Tools** ➜ **TRMNL Dashboard**.
+2. Tap **Update Dashboard Now** to download your latest dashboard.
+3. Put your Kindle to sleep — KOReader will display your full-screen dashboard as the sleep screen!
+4. Check **Auto-update on Sleep** to refresh every time the device suspends.
+
+---
+
 ## 📄 License
 MIT License. Feel free to modify and share!
