@@ -150,8 +150,8 @@ async def api_setup():
         "message": "Connected to self-hosted TRMNL"
     }
 
-@app.get("/api/display", summary="TRMNL Display Image Render")
-async def api_display(
+@app.get("/api/display/image", summary="TRMNL Display Raw Image")
+async def api_display_image(
     request: Request,
     id_header: Optional[str] = Header(None, alias="ID"),
     token_header: Optional[str] = Header(None, alias="Access-Token"),
@@ -161,11 +161,7 @@ async def api_display(
     orientation: Optional[int] = Query(None, description="Alias for rotate"),
     force: bool = Query(False, alias="force")
 ):
-    """
-    Renders optimized binary image (PNG or BMP) for Kindle e-ink display,
-    or HTML page if viewed directly in a browser (e.g. Kindle Experimental Browser).
-    Validates Kindle MAC address/Token and returns 'Refresh-Rate' & 'Image-Format' headers.
-    """
+    """Renders and returns raw optimized binary image (PNG or BMP) for Kindle e-ink display."""
     device_id = id_header or token_header or mac_param or "anonymous"
 
     allowed = settings.parsed_allowed_device_ids
@@ -177,23 +173,6 @@ async def api_display(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Unauthorized Kindle Device ID or Access Token"
             )
-
-    # Return HTML directly if accessed from a browser or explicitly requested
-    accept_header = request.headers.get("accept", "")
-    wants_html = format_param == "html" or (
-        "text/html" in accept_header and format_param not in ["png", "bmp"]
-    )
-    if wants_html:
-        context = await build_dashboard_context()
-        html = render_html_content(context)
-        return HTMLResponse(
-            content=html,
-            headers={
-                "Cache-Control": "no-store, no-cache, must-revalidate",
-                "Refresh": str(settings.refresh_rate_seconds),
-                "X-Device-Id": device_id,
-            }
-        )
 
     eff_rot = rotate if rotate is not None else orientation
     context = await build_dashboard_context()
@@ -209,6 +188,94 @@ async def api_display(
     }
 
     return Response(content=image_bytes, media_type=media_type, headers=response_headers)
+
+@app.get("/api/display", summary="TRMNL Display Image Render or Browser Viewer")
+async def api_display(
+    request: Request,
+    id_header: Optional[str] = Header(None, alias="ID"),
+    token_header: Optional[str] = Header(None, alias="Access-Token"),
+    mac_param: Optional[str] = Query(None, alias="mac"),
+    format_param: Optional[str] = Query(None, alias="format"),
+    rotate: Optional[int] = Query(None, description="Rotation degrees: 90, 180, 270 or 1, 2, 3"),
+    orientation: Optional[int] = Query(None, description="Alias for rotate"),
+    force: bool = Query(False, alias="force")
+):
+    """
+    Renders optimized binary image for Kindle e-ink display, or a clean HTML viewer
+    page displaying the image with today's date title when opened in the Kindle Experimental Browser.
+    """
+    device_id = id_header or token_header or mac_param or "anonymous"
+
+    allowed = settings.parsed_allowed_device_ids
+    if allowed:
+        norm_id = device_id.strip().lower()
+        if norm_id not in allowed:
+            logger.warning(f"Unauthorized device access attempt from: '{device_id}'")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unauthorized Kindle Device ID or Access Token"
+            )
+
+    accept_header = request.headers.get("accept", "")
+    wants_browser_view = format_param == "html" or (
+        "text/html" in accept_header and format_param not in ["png", "bmp"]
+    )
+
+    if wants_browser_view:
+        context = await build_dashboard_context()
+        now_day = context.get("now_day", "")
+        now_date = context.get("now_date", "")
+        refresh_sec = settings.refresh_rate_seconds
+        timestamp = int(time.time())
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="refresh" content="{refresh_sec}">
+    <title>{now_day}, {now_date}</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        html, body {{
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            overflow: hidden;
+            text-align: center;
+        }}
+        img {{
+            display: block;
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            margin: 0 auto;
+        }}
+    </style>
+</head>
+<body>
+    <img src="/api/display/image?t={timestamp}" alt="{now_day}, {now_date}">
+</body>
+</html>"""
+        return HTMLResponse(
+            content=html,
+            headers={
+                "Cache-Control": "no-store, no-cache, must-revalidate",
+                "Refresh": str(refresh_sec),
+                "X-Device-Id": device_id,
+            }
+        )
+
+    # Return raw image for curl / TRMNL clients / scripts
+    return await api_display_image(
+        request=request,
+        id_header=id_header,
+        token_header=token_header,
+        mac_param=mac_param,
+        format_param=format_param,
+        rotate=rotate,
+        orientation=orientation,
+        force=force
+    )
 
 @app.post("/api/log", summary="TRMNL Telemetry Logger")
 async def api_log(payload: TelemetryPayload):
