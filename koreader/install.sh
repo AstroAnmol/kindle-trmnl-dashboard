@@ -1,19 +1,28 @@
 #!/bin/sh
 ##############################################################################
-# KOReader TRMNL Plugin Installer
+# KOReader Kindle Dashboard Plugin Installer
+# Tailored for Amazon Kindle WP63GW (7th Gen Basic, firmware 5.12.2.2)
 #
-# Copies trmnl.koplugin to KOReader's plugins folder on your Kindle.
+# Supports:
+#   1) USB Mass Storage (auto-detects /Volumes/Kindle on macOS or /media on Linux)
+#   2) Wi-Fi / SSH (copies directly via SCP over local network)
 ##############################################################################
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PLUGIN_SRC="${SCRIPT_DIR}/plugins/trmnl.koplugin"
+PLUGIN_SRC="${SCRIPT_DIR}/plugins/dashboard.koplugin"
 
 echo "=========================================================="
-echo "         KOReader TRMNL Dashboard Plugin Installer        "
+echo "    Kindle Dashboard Plugin Installer for KOReader        "
 echo "=========================================================="
 echo ""
+
+if [ ! -d "${PLUGIN_SRC}" ]; then
+    echo "Error: Plugin source not found at '${PLUGIN_SRC}'" >&2
+    exit 1
+fi
+
 echo "Select installation method:"
 echo "  1) USB Cable (Kindle mounted as drive)"
 echo "  2) Wi-Fi / SSH (Copy via SCP)"
@@ -41,50 +50,57 @@ if [ "$METHOD" = "1" ]; then
         exit 1
     fi
 
-    TARGET_PLUGINS="${KINDLE_MOUNT}/koreader/plugins"
-    if [ ! -d "${TARGET_PLUGINS}" ]; then
-        mkdir -p "${TARGET_PLUGINS}"
+    DEST_PLUGINS="${KINDLE_MOUNT}/koreader/plugins"
+    DEST_SCREENSAVERS="${KINDLE_MOUNT}/koreader/screensavers/dashboard"
+    TARGET_PLUGIN="${DEST_PLUGINS}/dashboard.koplugin"
+
+    echo "Ensuring KOReader directories exist..."
+    mkdir -p "${DEST_PLUGINS}"
+    mkdir -p "${DEST_SCREENSAVERS}"
+
+    # Remove any old flagged/crashed trmnl plugin
+    if [ -d "${DEST_PLUGINS}/trmnl.koplugin" ]; then
+        echo "Removing obsolete trmnl.koplugin..."
+        rm -rf "${DEST_PLUGINS}/trmnl.koplugin"
     fi
 
-    TARGET="${TARGET_PLUGINS}/trmnl.koplugin"
-    echo "Installing plugin to ${TARGET}..."
-    rm -rf "${TARGET}"
-    cp -r "${PLUGIN_SRC}" "${TARGET}"
-
-    # Ensure screensavers directory exists
-    mkdir -p "${KINDLE_MOUNT}/koreader/screensavers"
+    echo "Copying dashboard.koplugin to ${TARGET_PLUGIN}..."
+    rm -rf "${TARGET_PLUGIN}"
+    cp -r "${PLUGIN_SRC}" "${TARGET_PLUGIN}"
 
     echo ""
-    echo "Done! The plugin is installed."
+    echo "✅ 'Kindle Dashboard' successfully installed to Kindle USB storage!"
     echo ""
-    echo "Next steps:"
-    echo "  1. Safely eject the Kindle drive and unplug USB."
-    echo "  2. Open KOReader on your Kindle."
-    echo "  3. Tap the top menu ➜ Tools (gear/wrench) ➜ 'TRMNL Dashboard'."
-    echo "  4. Tap 'Update Dashboard Now'."
-    echo "  5. Put your Kindle to sleep to see your dashboard!"
+    echo "Next steps on your Kindle:"
+    echo "  1. Safely Eject the Kindle drive from your computer."
+    echo "  2. Unplug the USB cable."
+    echo "  3. Open (or restart) KOReader on your Kindle."
+    echo "  4. Tap the top menu bar -> Tools (wrench icon) -> 'Kindle Dashboard'."
+    echo "  5. Tap 'Update & Display on Screen Now' to test live rendering!"
+    echo "  6. Put your Kindle to sleep to verify the screensaver."
     echo ""
 
 elif [ "$METHOD" = "2" ]; then
-    printf "Enter Kindle IP address (e.g. 10.0.0.x): "
+    printf "Enter Kindle IP address (e.g. 192.168.1.50): "
     read -r KINDLE_IP
     if [ -z "$KINDLE_IP" ]; then
         echo "Error: Kindle IP cannot be empty." >&2
         exit 1
     fi
 
-    echo "Copying plugin via scp to root@${KINDLE_IP}:/mnt/us/koreader/plugins/trmnl.koplugin ..."
-    ssh "root@${KINDLE_IP}" "mkdir -p /mnt/us/koreader/plugins /mnt/us/koreader/screensavers"
+    echo "Ensuring remote directories exist via SSH..."
+    ssh "root@${KINDLE_IP}" "mkdir -p /mnt/us/koreader/plugins /mnt/us/koreader/screensavers/dashboard && rm -rf /mnt/us/koreader/plugins/trmnl.koplugin"
+
+    echo "Copying plugin via SCP to root@${KINDLE_IP}:/mnt/us/koreader/plugins/dashboard.koplugin ..."
     scp -r "${PLUGIN_SRC}" "root@${KINDLE_IP}:/mnt/us/koreader/plugins/"
 
     echo ""
-    echo "Done! Installed over Wi-Fi."
+    echo "✅ 'Kindle Dashboard' successfully transferred over Wi-Fi!"
     echo ""
-    echo "Next steps:"
-    echo "  1. Open (or restart) KOReader on your Kindle."
-    echo "  2. Tap top menu ➜ Tools ➜ 'TRMNL Dashboard'."
-    echo "  3. Tap 'Update Dashboard Now'."
-    echo "  4. Put your Kindle to sleep to verify the dashboard sleep screen!"
+    echo "Next steps on your Kindle:"
+    echo "  1. Restart KOReader on your Kindle."
+    echo "  2. Tap Tools (wrench icon) -> 'Kindle Dashboard'."
+    echo "  3. Tap 'Update & Display on Screen Now' to test!"
     echo ""
 else
     echo "Invalid choice. Exiting."

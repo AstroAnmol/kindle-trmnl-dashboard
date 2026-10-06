@@ -9,6 +9,10 @@
     <style>
         /* ==================================================================
            TRMNL Monochrome Design System (Kindle Portrait 600x800)
+           Layout:
+             Row 1: Weather (Left) | Date + Time (Right)
+             Row 2: Calendar (Full-Width Monthly Grid)
+             Row 3: Upcoming Events (Left) | To Do (Right)
            ================================================================== */
         * {
             box-sizing: border-box;
@@ -88,35 +92,42 @@
             border-radius: 10px;
         }
 
-        /* 1. Weather Banner (Full Width Top Card) */
-        .weather-card {
+        /* ==================================================================
+           1. Top Row: Weather Card (Left) & Date + Time Card (Right)
+           ================================================================== */
+        .top-row {
             height: 84px;
+            display: flex;
+            gap: 6px;
             flex-shrink: 0;
-            padding: 6px 10px;
         }
 
-        .weather-banner-content {
+        .weather-card {
+            flex: 1.15;
+            padding: 6px 10px;
             display: flex;
+            flex-direction: row;
             align-items: center;
             justify-content: space-between;
-            height: 100%;
+            min-width: 0;
         }
 
         .weather-left {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            min-width: 0;
         }
 
         .weather-main-icon {
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             flex-shrink: 0;
         }
 
         .weather-main-icon svg {
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
             fill: currentColor;
             display: block;
         }
@@ -124,19 +135,23 @@
         .weather-temp-group {
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
 
         .weather-temp {
-            font-size: 34px;
+            font-size: 32px;
             font-weight: 900;
             line-height: 0.95;
             letter-spacing: -1px;
         }
 
         .weather-condition {
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: 700;
             margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .weather-right {
@@ -144,93 +159,121 @@
             flex-direction: column;
             align-items: flex-end;
             gap: 2px;
-        }
-
-        .weather-hilow {
-            font-size: 12.5px;
-            font-weight: 800;
-            display: flex;
-            gap: 7px;
+            flex-shrink: 0;
         }
 
         .weather-pill {
             font-size: 11px;
-            font-weight: 700;
-            color: #222222;
+            font-weight: 800;
+            color: #000000;
+        }
+
+        .weather-hilow {
+            font-size: 12px;
+            font-weight: 800;
+            display: flex;
+            gap: 6px;
         }
 
         .weather-details-grid {
             display: flex;
-            gap: 7px;
-            margin-top: 2px;
-            font-size: 9.5px;
+            gap: 6px;
+            margin-top: 1px;
+            font-size: 9px;
             font-weight: 600;
+            color: #333333;
         }
 
-        .weather-time-tag {
-            font-size: 9.5px;
-            font-weight: 800;
+        .datetime-card {
+            flex: 0.85;
+            padding: 6px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 0;
+        }
+
+        .datetime-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .datetime-time {
+            font-size: 30px;
+            font-weight: 900;
             font-family: var(--font-mono);
+            letter-spacing: -1px;
+            line-height: 1;
+        }
+
+        .datetime-badge {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 1px 6px;
             background: #000000;
             color: #ffffff;
-            padding: 1px 4px;
-            border-radius: 2px;
-            margin-left: 4px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        /* 2. Main Grid Layout (Portrait: 2 Columns) */
-        .main-content {
-            flex: 1;
+        .datetime-bottom {
             display: flex;
-            gap: 6px;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .datetime-day {
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            line-height: 1.1;
+        }
+
+        .datetime-date {
+            font-size: 11px;
+            font-weight: 700;
+            color: #333333;
+            line-height: 1.1;
+        }
+
+        /* ==================================================================
+           2. Middle Row: Calendar (Full-Width Monthly Grid)
+           ================================================================== */
+        .calendar-row {
+            flex: 1;
             min-height: 0;
-            height: calc({{ height }}px - 16px - 84px - 6px);
-        }
-
-        .left-column {
-            flex: 0 0 54%;
             display: flex;
-            flex-direction: column;
-            gap: 6px;
-            min-width: 0;
-            height: 100%;
         }
 
-        .right-column {
-            flex: 0 0 calc(46% - 6px);
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            min-width: 0;
-            height: 100%;
-        }
-
-        /* 3. Monthly Calendar View */
         .month-cal-card {
-            flex: 1;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             min-height: 0;
             overflow: hidden;
-            padding: 6px 7px;
+            padding: 6px 8px;
         }
 
         .cal-header-row {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
-            margin-bottom: 2px;
+            gap: 3px;
+            margin-bottom: 3px;
             flex-shrink: 0;
             text-align: center;
         }
 
         .cal-day-header {
-            font-size: 9px;
+            font-size: 9.5px;
             font-weight: 800;
             text-transform: uppercase;
             padding: 1px 0;
-            color: #333333;
-            letter-spacing: 0.3px;
+            color: #222222;
+            letter-spacing: 0.5px;
         }
 
         .cal-grid {
@@ -238,14 +281,14 @@
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             grid-auto-rows: 1fr;
-            gap: 2px;
+            gap: 3px;
             min-height: 0;
         }
 
         .cal-cell {
-            border: 1px solid #c8c8c8;
-            border-radius: 3px;
-            padding: 2px;
+            border: 1px solid #c0c0c0;
+            border-radius: 4px;
+            padding: 3px 4px;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
@@ -255,9 +298,9 @@
         }
 
         .cal-cell.other-month {
-            background: #fbfbfb;
+            background: #f8f8f8;
             color: #888888;
-            border-color: #e5e5e5;
+            border-color: #dddddd;
         }
 
         .cal-cell.is-today {
@@ -270,25 +313,25 @@
             justify-content: space-between;
             align-items: center;
             line-height: 1;
-            margin-bottom: 1px;
+            margin-bottom: 2px;
         }
 
         .cal-date-num {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 800;
         }
 
         .cal-cell.is-today .cal-date-num {
             background: #000000;
             color: #ffffff;
-            padding: 1px 3px;
+            padding: 1px 4px;
             border-radius: 2px;
-            font-size: 9.5px;
+            font-size: 10px;
         }
 
         .cal-event-dot {
-            width: 3.5px;
-            height: 3.5px;
+            width: 4px;
+            height: 4px;
             border-radius: 50%;
             background: #000000;
             display: inline-block;
@@ -297,16 +340,16 @@
         .cal-events-wrap {
             display: flex;
             flex-direction: column;
-            gap: 1px;
+            gap: 2px;
             overflow: hidden;
             flex: 1;
         }
 
         .cal-mini-event {
-            font-size: 7.5px;
+            font-size: 8px;
             font-weight: 700;
-            line-height: 1.1;
-            padding: 0 1px;
+            line-height: 1.15;
+            padding: 1px 3px;
             background: #eeeeee;
             border: 1px solid #444444;
             border-radius: 2px;
@@ -323,16 +366,24 @@
         }
 
         .cal-more-dots {
-            font-size: 7px;
+            font-size: 7.5px;
             font-weight: 800;
             color: #444444;
             line-height: 1;
         }
 
-        /* 4. Upcoming Agenda Card */
-        .agenda-card {
-            height: 235px;
+        /* ==================================================================
+           3. Bottom Row: Events (Left) & To Do (Right)
+           ================================================================== */
+        .bottom-row {
+            height: 242px;
+            display: flex;
+            gap: 6px;
             flex-shrink: 0;
+        }
+
+        .agenda-card {
+            flex: 1;
             display: flex;
             flex-direction: column;
             min-height: 0;
@@ -361,7 +412,7 @@
         .agenda-top-row {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
         }
 
         .agenda-badge {
@@ -369,7 +420,7 @@
             font-weight: 800;
             font-family: var(--font-mono);
             white-space: nowrap;
-            padding: 0 3px;
+            padding: 1px 4px;
             background: #000000;
             color: #ffffff;
             border-radius: 2px;
@@ -392,7 +443,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             margin-top: 1px;
-            line-height: 1.15;
+            line-height: 1.2;
         }
 
         .agenda-meta {
@@ -403,8 +454,7 @@
             text-overflow: ellipsis;
         }
 
-        /* 5. Tasks Card */
-        .tasks-card-compact {
+        .tasks-card {
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -417,6 +467,7 @@
             flex-direction: column;
             gap: 5px;
             overflow: hidden;
+            flex: 1;
         }
 
         .task-item {
@@ -463,45 +514,13 @@
             color: #666666;
         }
 
-        /* 6. Quick Notes Card */
-        .notes-card-compact {
-            height: 235px;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .notes-list {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            font-size: 10px;
-            font-weight: 600;
-            color: #222222;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        .note-item {
-            display: flex;
-            gap: 4px;
-            line-height: 1.25;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .note-bullet {
-            font-weight: 900;
-        }
-
         .footer-info {
             margin-top: auto;
             padding-top: 3px;
             border-top: 1px solid #cccccc;
             display: flex;
             justify-content: space-between;
+            align-items: center;
             font-size: 8px;
             font-weight: 700;
             text-transform: uppercase;
@@ -514,10 +533,11 @@
     <div class="dashboard-container">
         
         <!-- ================================================================
-             1. Weather Banner Card (Full Width Top Card)
+             1. Top Row: Weather Card (Left) & Date + Time Card (Right)
              ================================================================ -->
-        <div class="card weather-card">
-            <div class="weather-banner-content">
+        <header class="top-row">
+            <!-- Weather Card -->
+            <div class="card weather-card">
                 <div class="weather-left">
                     <div class="weather-main-icon">
                         {{ icons.icon_weather(weather.icon) }}
@@ -529,170 +549,152 @@
                 </div>
 
                 <div class="weather-right">
+                    <div class="weather-pill">{{ weather.location }}</div>
                     <div class="weather-hilow">
                         <span>&darr; {{ weather.temp_min }}{{ weather.unit }}</span>
                         <span>&uarr; {{ weather.temp_max }}{{ weather.unit }}</span>
-                        <span class="weather-time-tag">{{ now_time }}</span>
                     </div>
-                    <div class="weather-pill">{{ weather.location }}</div>
                     <div class="weather-details-grid">
                         <span>Rain: {{ weather.precipitation_probability }}%</span>
                         <span>Hum: {{ weather.humidity }}%</span>
-                        <span>Wind: {{ weather.wind_speed }} {{ "km/h" if weather.unit == "°C" else "mph" }}</span>
                     </div>
                 </div>
             </div>
-        </div>
+
+            <!-- Date + Time Card -->
+            <div class="card datetime-card">
+                <div class="datetime-top">
+                    <div class="datetime-time">{{ now_time }}</div>
+                    <span class="datetime-badge">
+                        {% if telemetry.battery_percent %}
+                            {{ telemetry.battery_percent }}%
+                        {% else %}
+                            TRMNL
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="datetime-bottom">
+                    <div class="datetime-day">{{ now_day }}</div>
+                    <div class="datetime-date">{{ now_date }}</div>
+                </div>
+            </div>
+        </header>
 
         <!-- ================================================================
-             2. Main Grid: Left Column (54%), Right Column (46%)
+             2. Middle Row: Calendar (Full Width Monthly Grid)
              ================================================================ -->
-        <main class="main-content">
-            
-            <!-- Left Column: Monthly Calendar + Upcoming Agenda -->
-            <section class="left-column">
-                
-                <!-- Monthly Calendar View -->
-                <div class="card month-cal-card">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <span>{{ calendar.month_grid.month_title }}</span>
-                        </div>
-                        <span class="card-badge">Calendar</span>
+        <section class="calendar-row">
+            <div class="card month-cal-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>{{ calendar.month_grid.month_title }}</span>
                     </div>
+                    <span class="card-badge">Calendar</span>
+                </div>
 
-                    <div class="cal-header-row">
-                        {% for day_name in calendar.month_grid.headers %}
-                            <div class="cal-day-header">{{ day_name }}</div>
-                        {% endfor %}
-                    </div>
+                <div class="cal-header-row">
+                    {% for day_name in calendar.month_grid.headers %}
+                        <div class="cal-day-header">{{ day_name }}</div>
+                    {% endfor %}
+                </div>
 
-                    <div class="cal-grid">
-                        {% for week in calendar.month_grid.weeks %}
-                            {% for day in week %}
-                                <div class="cal-cell {{ 'other-month' if not day.is_current_month else '' }} {{ 'is-today' if day.is_today else '' }}">
-                                    <div class="cal-date-top">
-                                        <span class="cal-date-num">{{ day.day }}</span>
-                                        {% if day.has_events and not day.is_today %}
-                                            <span class="cal-event-dot"></span>
+                <div class="cal-grid">
+                    {% for week in calendar.month_grid.weeks %}
+                        {% for day in week %}
+                            <div class="cal-cell {{ 'other-month' if not day.is_current_month else '' }} {{ 'is-today' if day.is_today else '' }}">
+                                <div class="cal-date-top">
+                                    <span class="cal-date-num">{{ day.day }}</span>
+                                    {% if day.has_events and not day.is_today %}
+                                        <span class="cal-event-dot"></span>
+                                    {% endif %}
+                                </div>
+
+                                {% if day.events %}
+                                    <div class="cal-events-wrap">
+                                        {% for ev in day.events[:2] %}
+                                            <div class="cal-mini-event {{ 'all-day' if ev.all_day else '' }}" title="{{ ev.title }}">
+                                                {{ ev.title }}
+                                            </div>
+                                        {% endfor %}
+                                        {% if day.event_count > 2 %}
+                                            <div class="cal-more-dots">+{{ day.event_count - 2 }} more</div>
                                         {% endif %}
                                     </div>
-
-                                    {% if day.events %}
-                                        <div class="cal-events-wrap">
-                                            {% for ev in day.events[:1] %}
-                                                <div class="cal-mini-event {{ 'all-day' if ev.all_day else '' }}" title="{{ ev.title }}">
-                                                    {{ ev.title }}
-                                                </div>
-                                            {% endfor %}
-                                            {% if day.event_count > 1 %}
-                                                <div class="cal-more-dots">+{{ day.event_count - 1 }} more</div>
-                                            {% endif %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
+                                {% endif %}
+                            </div>
                         {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             3. Bottom Row: Events (Left) & To Do (Right)
+             ================================================================ -->
+        <footer class="bottom-row">
+            <!-- Events Card -->
+            <div class="card agenda-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>Upcoming Events</span>
                     </div>
+                    <span class="card-badge">{{ calendar.next_events | length }} Events</span>
                 </div>
 
-                <!-- Upcoming Agenda Events -->
-                <div class="card agenda-card">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <span>Upcoming Events</span>
-                        </div>
-                        <span class="card-badge">{{ calendar.next_events | length }} Events</span>
-                    </div>
-
-                    <div class="agenda-list">
-                        {% if calendar.next_events %}
-                            {% for ev in calendar.next_events[:5] %}
-                                <div class="agenda-item">
-                                    <div class="agenda-top-row">
-                                        <span class="agenda-badge">{{ ev.day_badge }}</span>
-                                        <span class="agenda-time">{{ ev.time }}</span>
-                                    </div>
-                                    <div class="agenda-title">{{ ev.title }}</div>
-                                    {% if ev.location %}
-                                        <div class="agenda-meta">&bull; {{ ev.location }}</div>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
-                        {% else %}
+                <div class="agenda-list">
+                    {% if calendar.next_events %}
+                        {% for ev in calendar.next_events[:5] %}
                             <div class="agenda-item">
                                 <div class="agenda-top-row">
-                                    <span class="agenda-badge">Schedule</span>
+                                    <span class="agenda-badge">{{ ev.day_badge }}</span>
+                                    <span class="agenda-time">{{ ev.time }}</span>
                                 </div>
-                                <div class="agenda-title">No upcoming events scheduled</div>
-                                <div class="agenda-meta">Enjoy your clear schedule!</div>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-            </section>
-
-            <!-- Right Column: Tasks Checklist + Quick Notes -->
-            <section class="right-column">
-                
-                <!-- Tasks Checklist Card -->
-                <div class="card tasks-card-compact">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <span>Tasks & Focus</span>
-                        </div>
-                        <span class="card-badge">{{ tasks.completed_count }}/{{ tasks.total }} Done</span>
-                    </div>
-
-                    <div class="task-list">
-                        {% for task in tasks.tasks[:8] %}
-                            <div class="task-item {{ 'completed' if task.completed else '' }}">
-                                <div class="task-checkbox {{ 'checked' if task.completed else '' }}">
-                                    {% if task.completed %}
-                                        <svg width="8" height="8" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-                                    {% endif %}
-                                </div>
-                                <div class="task-text">{{ task.text }}</div>
+                                <div class="agenda-title">{{ ev.title }}</div>
+                                {% if ev.location %}
+                                    <div class="agenda-meta">&bull; {{ ev.location }}</div>
+                                {% endif %}
                             </div>
                         {% endfor %}
-                    </div>
-                </div>
-
-                <!-- Quick Notes Card -->
-                <div class="card notes-card-compact">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <span>Quick Notes</span>
-                        </div>
-                        <span class="card-badge">Notes</span>
-                    </div>
-
-                    <div class="notes-list">
-                        {% if tasks.notes %}
-                            {% for note in tasks.notes[:5] %}
-                                <div class="note-item">
-                                    <span class="note-bullet">&bull;</span>
-                                    <span>{{ note }}</span>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="note-item">
-                                <span class="note-bullet">&bull;</span>
-                                <span>Kindle TRMNL Dashboard active.</span>
+                    {% else %}
+                        <div class="agenda-item">
+                            <div class="agenda-top-row">
+                                <span class="agenda-badge">Schedule</span>
                             </div>
-                        {% endif %}
-                    </div>
+                            <div class="agenda-title">No upcoming events scheduled</div>
+                            <div class="agenda-meta">Enjoy your clear schedule!</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
 
-                    <div class="footer-info">
-                        <span>Updated: {{ last_updated }}</span>
-                        <span>Kindle WP63GW</span>
+            <!-- To Do Card -->
+            <div class="card tasks-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>To Do</span>
                     </div>
+                    <span class="card-badge">{{ tasks.completed_count }}/{{ tasks.total }} Done</span>
                 </div>
 
-            </section>
+                <div class="task-list">
+                    {% for task in tasks.tasks[:6] %}
+                        <div class="task-item {{ 'completed' if task.completed else '' }}">
+                            <div class="task-checkbox {{ 'checked' if task.completed else '' }}">
+                                {% if task.completed %}
+                                    <svg width="8" height="8" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                                {% endif %}
+                            </div>
+                            <div class="task-text">{{ task.text }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
 
-        </main>
+                <div class="footer-info">
+                    <span>Updated: {{ last_updated }}</span>
+                    <span>Kindle WP63GW</span>
+                </div>
+            </div>
+        </footer>
 
     </div>
 </body>

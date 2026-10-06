@@ -40,34 +40,58 @@ def _render_fallback_pillow(context: Dict[str, Any]) -> bytes:
     img = Image.new("RGB", (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(img)
 
-    # Weather Top Card (full width)
-    draw.rectangle([(10, 10), (width - 10, 100)], outline=(0, 0, 0), width=2)
+    # 1. Top Row: Weather Card (Left) & Date + Time Card (Right)
+    top_split = 320
+    draw.rectangle([(8, 8), (top_split, 92)], outline=(0, 0, 0), width=2)
     w = context.get("weather", {})
-    draw.text((25, 20), f"WEATHER: {w.get('temperature', '')}{w.get('unit', '')} - {w.get('condition', '')}", fill=(0, 0, 0))
-    draw.text((25, 48), f"High: {w.get('temp_max', '')}° | Low: {w.get('temp_min', '')}° | Rain: {w.get('precipitation_probability', '')}%", fill=(0, 0, 0))
-    draw.text((25, 74), f"Loc: {w.get('location', '')} | Updated: {context.get('now_time', '')}", fill=(0, 0, 0))
+    draw.text((18, 16), f"WEATHER: {w.get('temperature', '')}{w.get('unit', '')} - {w.get('condition', '')}", fill=(0, 0, 0))
+    draw.text((18, 42), f"Hi: {w.get('temp_max', '')}° | Lo: {w.get('temp_min', '')}° | Rain: {w.get('precipitation_probability', '')}%", fill=(0, 0, 0))
+    draw.text((18, 68), f"Loc: {w.get('location', '')}", fill=(0, 0, 0))
 
-    # Main Columns
-    left_w = int(width * 0.54)
-    draw.rectangle([(10, 108), (left_w - 5, height - 10)], outline=(0, 0, 0), width=2)
-    draw.rectangle([(left_w + 5, 108), (width - 10, height - 10)], outline=(0, 0, 0), width=2)
+    draw.rectangle([(top_split + 6, 8), (width - 8, 92)], outline=(0, 0, 0), width=2)
+    draw.text((top_split + 18, 16), f"{context.get('now_time', '')}", fill=(0, 0, 0))
+    draw.text((top_split + 18, 44), f"{context.get('now_day', '')}", fill=(0, 0, 0))
+    draw.text((top_split + 18, 68), f"{context.get('now_date', '')}", fill=(0, 0, 0))
 
-    # Calendar / Agenda
-    draw.text((20, 118), "UPCOMING EVENTS:", fill=(0, 0, 0))
+    # 2. Middle Row: Calendar (Full Width)
+    cal_top = 98
+    cal_bottom = 544
+    draw.rectangle([(8, cal_top), (width - 8, cal_bottom)], outline=(0, 0, 0), width=2)
     cal = context.get("calendar", {})
-    events = cal.get("next_events", [])
-    y = 145
-    for ev in events[:8]:
-        draw.text((25, y), f"• {ev.get('day_badge', '')} {ev.get('time', '')} {ev.get('title', '')[:22]}", fill=(0, 0, 0))
-        y += 24
+    month_grid = cal.get("month_grid", {})
+    month_title = month_grid.get("month_title", "CALENDAR")
+    draw.text((18, cal_top + 10), f"CALENDAR: {month_title}", fill=(0, 0, 0))
 
-    # Tasks
-    draw.text((left_w + 15, 118), "TASKS & FOCUS:", fill=(0, 0, 0))
+    headers = "   ".join(month_grid.get("headers", ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]))
+    draw.text((18, cal_top + 32), headers, fill=(0, 0, 0))
+
+    cy = cal_top + 60
+    for week in month_grid.get("weeks", []):
+        week_str = "    ".join(f"{d.get('day'):02d}" for d in week)
+        draw.text((18, cy), week_str, fill=(0, 0, 0))
+        cy += 45
+
+    # 3. Bottom Row: Events (Left) & To Do (Right)
+    bot_top = 550
+    bot_split = int((width - 16) / 2) + 8
+    draw.rectangle([(8, bot_top), (bot_split - 3, height - 8)], outline=(0, 0, 0), width=2)
+    draw.rectangle([(bot_split + 3, bot_top), (width - 8, height - 8)], outline=(0, 0, 0), width=2)
+
+    # Left: Upcoming Events
+    draw.text((18, bot_top + 10), "UPCOMING EVENTS:", fill=(0, 0, 0))
+    events = cal.get("next_events", [])
+    ey = bot_top + 36
+    for ev in events[:6]:
+        draw.text((18, ey), f"• {ev.get('day_badge', '')} {ev.get('time', '')} {ev.get('title', '')[:18]}", fill=(0, 0, 0))
+        ey += 24
+
+    # Right: To Do Tasks
+    draw.text((bot_split + 14, bot_top + 10), "TO DO:", fill=(0, 0, 0))
     tasks = context.get("tasks", {}).get("tasks", [])
-    ty = 145
-    for t in tasks[:10]:
+    ty = bot_top + 36
+    for t in tasks[:7]:
         mark = "[X]" if t.get("completed") else "[ ]"
-        draw.text((left_w + 20, ty), f"{mark} {t.get('text', '')[:20]}", fill=(0, 0, 0))
+        draw.text((bot_split + 14, ty), f"{mark} {t.get('text', '')[:20]}", fill=(0, 0, 0))
         ty += 24
 
     buf = io.BytesIO()
