@@ -1,5 +1,6 @@
 import os
 import time
+import hashlib
 import logging
 from datetime import datetime
 from typing import Optional, Dict, Any, List
@@ -159,7 +160,9 @@ async def api_display_image(
     format_param: Optional[str] = Query(None, alias="format"),
     rotate: Optional[int] = Query(None, description="Rotation degrees: 90, 180, 270 or 1, 2, 3"),
     orientation: Optional[int] = Query(None, description="Alias for rotate"),
-    force: bool = Query(False, alias="force")
+    force: bool = Query(False, alias="force"),
+    battery_level: Optional[int] = Query(None, alias="batteryLevel"),
+    is_charging: Optional[int] = Query(None, alias="isCharging")
 ):
     """Renders and returns raw optimized binary image (PNG or BMP) for Kindle e-ink display."""
     device_id = id_header or token_header or mac_param or "anonymous"
@@ -174,17 +177,41 @@ async def api_display_image(
                 detail="Unauthorized Kindle Device ID or Access Token"
             )
 
+    # Ingest battery telemetry if provided via query parameters (e.g., from onlinescreensaver update.sh)
+    if battery_level is not None:
+        telemetry_update = {
+            "device_id": device_id,
+            "battery_percent": battery_level
+        }
+        if is_charging is not None:
+            telemetry_update["is_charging"] = bool(is_charging)
+        telemetry_service.update(telemetry_update)
+
     eff_rot = rotate if rotate is not None else orientation
     context = await build_dashboard_context()
     image_bytes, out_format = await render_dashboard_image(context, force_refresh=force, rotate=eff_rot)
 
     media_type = "image/bmp" if out_format == "bmp" else "image/png"
+    etag = f'"{hashlib.md5(image_bytes).hexdigest()}"'
+
+    # Support conditional HTTP 304 Not Modified requests (ETag caching saves Kindle battery & avoids unnecessary refresh)
+    if_none_match = request.headers.get("if-none-match")
+    if if_none_match and if_none_match.strip() == etag and not force:
+        return Response(
+            status_code=status.HTTP_304_NOT_MODIFIED,
+            headers={
+                "ETag": etag,
+                "Cache-Control": "no-store, no-cache, must-revalidate",
+                "Refresh-Rate": str(settings.refresh_rate_seconds),
+            }
+        )
 
     response_headers = {
         "Refresh-Rate": str(settings.refresh_rate_seconds),
         "Image-Format": out_format,
         "Cache-Control": "no-store, no-cache, must-revalidate",
         "X-Device-Id": device_id,
+        "ETag": etag,
     }
 
     return Response(content=image_bytes, media_type=media_type, headers=response_headers)
@@ -198,7 +225,9 @@ async def api_display(
     format_param: Optional[str] = Query(None, alias="format"),
     rotate: Optional[int] = Query(None, description="Rotation degrees: 90, 180, 270 or 1, 2, 3"),
     orientation: Optional[int] = Query(None, description="Alias for rotate"),
-    force: bool = Query(False, alias="force")
+    force: bool = Query(False, alias="force"),
+    battery_level: Optional[int] = Query(None, alias="batteryLevel"),
+    is_charging: Optional[int] = Query(None, alias="isCharging")
 ):
     """
     Renders optimized binary image for Kindle e-ink display, or a clean HTML viewer
@@ -274,7 +303,9 @@ async def api_display(
         format_param=format_param,
         rotate=rotate,
         orientation=orientation,
-        force=force
+        force=force,
+        battery_level=battery_level,
+        is_charging=is_charging
     )
 
 @app.post("/api/log", summary="TRMNL Telemetry Logger")

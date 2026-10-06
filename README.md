@@ -202,85 +202,59 @@ You do **not** need a Google Cloud API key or OAuth setup to display your calend
 
 ## 📱 Kindle WP63GW Client Setup (7th Gen Basic)
 
-The Kindle WP63GW (Kindle Touch 2 / 7th Gen Basic) features an 800×600 e-ink panel and does **not** have a built-in frontlight. Our scripts automatically handle these hardware specifications.
+The client runs as a native **Online Screensaver extension** via **KUAL**. It allows your Kindle to sleep naturally in low-power deep sleep, waking periodically to download the latest dashboard image and repaint the e-ink screen with zero UI chrome.
 
 ### Prerequisites on Kindle
-1. A **jailbroken Kindle WP63GW** (via LanguageBreak or WatchThis).
+1. A **jailbroken Kindle** (WP63GW / KT2 / Paperwhite).
 2. **KUAL** (Kindle Unified Application Launcher) installed.
-3. **NiLuJe's FBInk** binary:
-   - Download `fbink-armel` or `fbink-armhf` from the [NiLuJe FBInk release thread](https://www.mobileread.com/forums/showthread.php?t=299066).
-   - Place `fbink` in `kindle/bin/fbink` (or install via NiLuJe's KUAL extension).
+3. *(Optional)* NiLuJe's `linkss` (ScreenSavers hack). Not required, as the extension paints directly to the display using Amazon's built-in `eips`.
 
 ---
 
-### Step 1: Configure Client Settings
-Edit `kindle/config.sh`:
-```sh
-# Set to your home server IP (default: 10.0.0.219:5055)
-SERVER_URL="http://10.0.0.219:5055"
+### Step 1: Install Extension onto Kindle
 
-# Rotation for Kindle WP63GW (landscape 800x600):
-# 1 = 90° clockwise landscape (default)
-# 3 = 270° inverted landscape
-FBINK_ROTATION=1
-```
+#### Option A: Via USB Cable (Recommended)
+1. Plug your Kindle into your computer via USB.
+2. Run the installer:
+   ```bash
+   cd kindle
+   ./install.sh
+   ```
+   Choose option `1` (USB Cable) and press Enter.
+3. Safely eject and unplug your Kindle.
 
----
-
-### Step 2: Copy Files to Kindle via SCP
-Connect your Kindle to Wi-Fi and copy the client folder:
+#### Option B: Via Wi-Fi / SSH (SCP)
 ```bash
-# Copy client scripts to Kindle USB storage
-scp -r kindle root@<kindle-ip>:/mnt/us/kindle-trmnl-dashboard
+# Copy extension to Kindle USB storage
+scp -r kindle/extensions/onlinescreensaver root@<kindle-ip>:/mnt/us/extensions/
 
-# Install KUAL menu extension
-scp -r kindle/kual/kindle-trmnl root@<kindle-ip>:/mnt/us/extensions/
+# Set execution permissions
+ssh root@<kindle-ip> "chmod +x /mnt/us/extensions/onlinescreensaver/bin/*.sh"
 ```
 
 ---
 
-### Step 3: Run Setup on Kindle
-SSH into your Kindle:
-```bash
-ssh root@<kindle-ip>
-cd /mnt/us/kindle-trmnl-dashboard
-sh setup.sh
-```
-`setup.sh` will:
-- Set execution permissions.
-- Validate `fbink`.
-- Prevent screensaver timeout (`preventScreenSaver 1`).
-- Check frontlight hardware (gracefully skipped on WP63GW without driver warnings).
-- Unload background book indexer to conserve battery.
-- Test server connectivity to `http://10.0.0.219:5055/api/setup`.
+### Step 2: Activate in KUAL
 
----
-
-### Step 4: Start the Dashboard
-#### Option A: Via KUAL Launcher (Recommended)
-1. Open **KUAL** from your Kindle book library.
-2. Select **Kindle TRMNL Dashboard**.
-3. Tap **Start Dashboard Loop**.
-
-#### Option B: Via SSH Terminal
-```bash
-cd /mnt/us/kindle-trmnl-dashboard
-nohup sh loop.sh >/dev/null 2>&1 &
-```
+1. On your Kindle, open **KUAL** from your book library.
+2. Tap **Online Screensaver**.
+3. Tap **Enable auto-download**.
+4. Tap **Update now** to trigger an immediate fetch and verify connectivity.
+5. Put your Kindle to sleep (press the power button once). The full-screen dashboard will remain visible on the e-ink screen while sleeping!
 
 ---
 
 ## 🔋 Battery Preservation Deep Dive
 
-With our battery-preserving execution loop, a Kindle WP63GW runs for **4 to 8 weeks on a single battery charge**:
+With the Online Screensaver architecture, a Kindle WP63GW runs for **4 to 8 weeks on a single battery charge**:
 
 | Optimization | Implementation | Impact |
 | :--- | :--- | :--- |
-| **Frontlight Disabled** | Checked and skipped automatically on WP63GW. | No driver errors or wasted cycles. |
-| **Wi-Fi Duty Cycle** | Wi-Fi is powered ON only for the ~10s download window, then powered OFF immediately. | Eliminates continuous wireless radio power draw. |
-| **Deep RAM Sleep** | Device executes `echo mem > /sys/power/state` between refreshes. | Kindle enters true hardware sleep state (< 1mA current draw). |
-| **Background Indexing Off** | `lipc-set-prop com.lab126.blanket unload` | Prevents Kindle OS from indexing files in the background. |
-| **WP63GW Battery Sysfs** | Prioritizes `/sys/devices/system/yoshi_battery/battery_capacity` and `max77696-battery`. | Accurate battery telemetry on every refresh. |
+| **Edge-to-Edge Fullscreen** | Native screensaver mode via `eips -f -g`. | Zero top navigation bar or browser chrome. |
+| **Wi-Fi Duty Cycle** | Wi-Fi is powered ON only for ~5–8s per update, then powered OFF immediately. | Eliminates continuous wireless radio power draw. |
+| **Native Deep Sleep** | Uses hardware RTC alarm (`lipc-set-prop com.lab126.powerd rtcWakeup`). | Kindle enters true hardware sleep state (< 1mA current draw). |
+| **ETag 304 Caching** | Server returns `304 Not Modified` if dashboard contents have not changed. | Kindle skips image download and e-ink redraw, saving battery. |
+| **No UI Crashes** | Cooperates with Amazon's `powerd` instead of stopping `lab126_gui`. | Rock-solid stability without watchdog reboots. |
 
 ---
 
