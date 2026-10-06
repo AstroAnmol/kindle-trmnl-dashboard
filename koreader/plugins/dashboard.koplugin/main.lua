@@ -386,7 +386,7 @@ end
 function DashboardPlugin:addToMainMenu(menu_items)
     menu_items.dashboard = {
         text = _("Kindle Dashboard"),
-        sorting_hint = "more_tools",
+        sorting_hint = "tools",
         sub_item_table = {
             {
                 text = _("Update & Display on Screen Now"),
