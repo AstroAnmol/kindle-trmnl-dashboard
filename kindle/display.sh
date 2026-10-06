@@ -49,6 +49,8 @@ elif [ -x "/usr/bin/fbink" ]; then
     FOUND_FBINK="/usr/bin/fbink"
 elif [ -x "/mnt/us/bin/fbink" ]; then
     FOUND_FBINK="/mnt/us/bin/fbink"
+elif [ -x "/mnt/us/libkh/bin/fbink" ]; then
+    FOUND_FBINK="/mnt/us/libkh/bin/fbink"
 elif [ -x "/mnt/us/extensions/MRInstaller/bin/fbink" ]; then
     FOUND_FBINK="/mnt/us/extensions/MRInstaller/bin/fbink"
 elif [ -x "/mnt/us/kual/bin/fbink" ]; then
@@ -198,13 +200,24 @@ fi
 # ------------------------------------------------------------------------------
 log "Disabling Wi-Fi..."
 lipc-set-prop com.lab126.cmd wirelessEnable 0 2>/dev/null || true
+if command -v wifid >/dev/null 2>&1; then
+    wifid disable >/dev/null 2>&1 || true
+fi
 
 # ------------------------------------------------------------------------------
 # 9. Deep Sleep (ONLY in background loop mode)
 # ------------------------------------------------------------------------------
 if [ $SLEEP_MODE -eq 1 ]; then
     INTERVAL="$DEFAULT_INTERVAL"
-    log "Entering sleep for ${INTERVAL}s..."
+    log "Arming RTC alarm for ${INTERVAL}s and entering sleep..."
+    echo 0 > /sys/class/rtc/rtc0/wakealarm 2>/dev/null || true
+    if ! echo "+$INTERVAL" > /sys/class/rtc/rtc0/wakealarm 2>/dev/null; then
+        echo $(( $(date +%s) + INTERVAL )) > /sys/class/rtc/rtc0/wakealarm 2>/dev/null || true
+    fi
     lipc-set-prop -i com.lab126.powerd rtcWakeup "$INTERVAL" 2>/dev/null || true
-    echo "mem" > /sys/power/state
+    if ! echo "mem" > /sys/power/state 2>/dev/null; then
+        log "Kernel refused suspend; sleeping awake..."
+        sleep "$INTERVAL"
+    fi
+    log "Woke from sleep cycle."
 fi

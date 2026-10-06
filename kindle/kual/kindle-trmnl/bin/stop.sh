@@ -1,62 +1,61 @@
 #!/bin/sh
 # ==============================================================================
 # Kindle TRMNL - Stop Background Loop
+# Terminates the loop, restores the Kindle reader GUI framework, and re-enables
+# Wi-Fi and screensaver.
 # ==============================================================================
 
+EXT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
 PID_FILE="/tmp/kindle-trmnl.pid"
-KILLED=0
+LOG_FILE="/tmp/kindle-trmnl.log"
 
-eips -c 2>/dev/null || true
-sleep 1
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [STOP] $*" >> "$LOG_FILE"
+    echo "[STOP] $*"
+}
 
-eips 0 0 "==== KINDLE TRMNL ====" 2>/dev/null || true
-eips 0 1 "Stop Dashboard Loop" 2>/dev/null || true
-eips 0 2 "" 2>/dev/null || true
+log "Stopping Kindle TRMNL dashboard..."
 
-# 1. Kill by PID file
+# 1. Kill loop by PID
 if [ -f "$PID_FILE" ]; then
-    PID="$(cat "$PID_FILE")"
-    if kill -0 "$PID" 2>/dev/null; then
+    PID="$(cat "$PID_FILE" 2>/dev/null)"
+    if [ -n "$PID" ]; then
         kill "$PID" 2>/dev/null || true
         sleep 1
         kill -9 "$PID" 2>/dev/null || true
-        eips 0 3 "Killed loop PID: ${PID}" 2>/dev/null || true
-        KILLED=1
-    else
-        eips 0 3 "Stale PID file (${PID}) - removing" 2>/dev/null || true
+        log "Killed loop PID $PID"
     fi
     rm -f "$PID_FILE"
-else
-    eips 0 3 "No PID file found." 2>/dev/null || true
 fi
 
-# 2. Kill any lingering loop.sh / display.sh processes by name
-# busybox killall matches the argv[0] of the process (typically 'sh')
-# so we use pkill -f if available, else killall on the script names
+# 2. Kill any lingering loop or display processes
 if command -v pkill >/dev/null 2>&1; then
-    pkill -9 -f "loop.sh" 2>/dev/null && KILLED=1 || true
-    pkill -9 -f "display.sh" 2>/dev/null && KILLED=1 || true
+    pkill -9 -f "loop.sh" 2>/dev/null || true
+    pkill -9 -f "display.sh" 2>/dev/null || true
+    pkill -9 -f "once.sh" 2>/dev/null || true
 else
-    killall -9 loop.sh display.sh 2>/dev/null && KILLED=1 || true
+    killall -9 loop.sh display.sh once.sh 2>/dev/null || true
 fi
 
-# 3. Kill any stuck wget or curl (from a hung display.sh fetch)
-pkill -9 -f "wget" 2>/dev/null || killall -9 wget 2>/dev/null || true
-pkill -9 -f "curl" 2>/dev/null || killall -9 curl 2>/dev/null || true
+# 3. Restore Kindle GUI framework (takeover_end)
+log "Restoring Kindle reader framework..."
+if command -v initctl >/dev/null 2>&1; then
+    initctl start framework >/dev/null 2>&1 || initctl start lab126_gui >/dev/null 2>&1 || true
+    initctl start webreader >/dev/null 2>&1 || true
+elif [ -x /etc/init.d/framework ]; then
+    /etc/init.d/framework start >/dev/null 2>&1 || true
+fi
 
-# 4. Restore normal Kindle behaviour
+# 4. Restore power management and Wi-Fi
 lipc-set-prop com.lab126.powerd preventScreenSaver 0 2>/dev/null || true
 lipc-set-prop com.lab126.cmd wirelessEnable 1 2>/dev/null || true
-
-eips 0 4 "" 2>/dev/null || true
-
-if [ $KILLED -eq 1 ]; then
-    eips 0 5 "Loop stopped successfully." 2>/dev/null || true
-else
-    eips 0 5 "No loop was running." 2>/dev/null || true
+if command -v wifid >/dev/null 2>&1; then
+    wifid enable >/dev/null 2>&1 || true
 fi
 
-eips 0 6 "Wi-Fi re-enabled." 2>/dev/null || true
-eips 0 7 "Screen saver re-enabled." 2>/dev/null || true
-eips 0 8 "" 2>/dev/null || true
-eips 0 9 "Tap Back or anywhere to return." 2>/dev/null || true
+log "Kindle restored to normal."
+
+# Quick on-screen feedback
+eips 0 38 "TRMNL: Loop stopped." 2>/dev/null || true
+eips 0 39 "Kindle framework restored." 2>/dev/null || true

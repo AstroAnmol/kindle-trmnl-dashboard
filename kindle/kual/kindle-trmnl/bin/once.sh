@@ -1,17 +1,34 @@
 #!/bin/sh
 # ==============================================================================
 # Kindle TRMNL - Refresh Screen Once
-# Strategy: fetch image WHILE KUAL is open (blocking), then render in
-# background AFTER KUAL exits so the home screen repaint can't overwrite it.
+# Detaches from KUAL, waits for KUAL to exit & Home Screen to settle,
+# then connects to Wi-Fi, fetches the dashboard, and renders it to the screen.
 # ==============================================================================
 
 EXT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Self-heal: strip Windows carriage returns from all scripts
+# Strip Windows carriage returns from all scripts
 sed -i -e 's/\r$//' "${EXT_DIR}"/*.sh "${EXT_DIR}/bin"/*.sh 2>/dev/null || true
 chmod +x "${EXT_DIR}"/*.sh "${EXT_DIR}/bin"/*.sh 2>/dev/null || true
 
-# Load config
+# Self-detach: run in background immune to SIGHUP so KUAL can exit cleanly first
+if [ "$1" != "__run" ]; then
+    SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+    if command -v setsid >/dev/null 2>&1; then
+        setsid /bin/sh "$SCRIPT_PATH" __run </dev/null >/tmp/kindle-once.log 2>&1 &
+    else
+        /bin/sh "$SCRIPT_PATH" __run </dev/null >/tmp/kindle-once.log 2>&1 &
+    fi
+    exit 0
+fi
+
+# We are in the detached runner process
+trap '' HUP
+
+# Wait for KUAL to completely finish unmapping and for Home Screen to settle
+sleep 3
+
+# Load configuration
 if [ -f "${EXT_DIR}/config.sh" ]; then
     . "${EXT_DIR}/config.sh"
 elif [ -f "/mnt/us/extensions/kindle-trmnl/config.sh" ]; then
@@ -21,10 +38,23 @@ fi
 SERVER_URL="${SERVER_URL:-http://10.0.0.219:5055}"
 WIFI_TIMEOUT="${WIFI_TIMEOUT:-20}"
 FBINK_ROTATION="${FBINK_ROTATION:-1}"
+LOG_FILE="${LOG_FILE:-/tmp/kindle-trmnl.log}"
 
-# Detect fbink
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [ONCE] $*" >> "$LOG_FILE"
+    echo "[ONCE] $*"
+}
+
+log "Refreshing screen once..."
+
+# Suppress screensaver while active
+lipc-set-prop com.lab126.powerd preventScreenSaver 1 2>/dev/null || true
+
+# 1. Detect fbink binary
 FOUND_FBINK=""
-if [ -x "${EXT_DIR}/bin/fbink" ]; then
+if [ -n "$FBINK_BIN" ] && [ -x "$FBINK_BIN" ]; then
+    FOUND_FBINK="$FBINK_BIN"
+elif [ -x "${EXT_DIR}/bin/fbink" ]; then
     FOUND_FBINK="${EXT_DIR}/bin/fbink"
 elif command -v fbink >/dev/null 2>&1; then
     FOUND_FBINK="$(command -v fbink)"
@@ -32,45 +62,48 @@ elif [ -x "/usr/bin/fbink" ]; then
     FOUND_FBINK="/usr/bin/fbink"
 elif [ -x "/mnt/us/bin/fbink" ]; then
     FOUND_FBINK="/mnt/us/bin/fbink"
+elif [ -x "/mnt/us/libkh/bin/fbink" ]; then
+    FOUND_FBINK="/mnt/us/libkh/bin/fbink"
 elif [ -x "/mnt/us/extensions/MRInstaller/bin/fbink" ]; then
     FOUND_FBINK="/mnt/us/extensions/MRInstaller/bin/fbink"
+elif [ -x "/mnt/us/kual/bin/fbink" ]; then
+    FOUND_FBINK="/mnt/us/kual/bin/fbink"
 fi
 
-eips 0 35 "==== KINDLE TRMNL ====" 2>/dev/null || true
-eips 0 36 "Refresh Screen Once" 2>/dev/null || true
-eips 0 37 "" 2>/dev/null || true
-
-# Prevent screensaver while we work and after dashboard renders
-lipc-set-prop com.lab126.powerd preventScreenSaver 1 2>/dev/null || true
-
-# ---------- Step 1: Enable Wi-Fi (blocking) ----------
-eips 0 38 "Enabling Wi-Fi..." 2>/dev/null || true
+# 2. Turn ON Wi-Fi
+log "Enabling Wi-Fi..."
 lipc-set-prop com.lab126.cmd wirelessEnable 1 2>/dev/null || true
+if command -v wifid >/dev/null 2>&1; then
+    wifid enable >/dev/null 2>&1 || true
+fi
 
 CONNECTED=0
 TIMER=0
 while [ $TIMER -lt "$WIFI_TIMEOUT" ]; do
-    if ifconfig wlan0 2>/dev/null | grep -q "inet"; then
-        CONNECTED=1; break
+    if ifconfig wlan0 2>/dev/null | grep -q "inet" || ifconfig | grep -q "inet addr:[0-9]"; then
+        CONNECTED=1
+        break
     fi
-    sleep 1; TIMER=$((TIMER + 1))
+    sleep 1
+    TIMER=$((TIMER + 1))
 done
-# Grace period
+
 if [ $CONNECTED -eq 0 ]; then
     sleep 2
-    ifconfig wlan0 2>/dev/null | grep -q "inet" && CONNECTED=1
+    if ifconfig 2>/dev/null | grep -q "inet"; then
+        CONNECTED=1
+    fi
 fi
 
 if [ $CONNECTED -eq 0 ]; then
-    eips 0 38 "Error: Wi-Fi timed out (${WIFI_TIMEOUT}s)." 2>/dev/null || true
-    eips 0 39 "Check your network settings." 2>/dev/null || true
+    log "ERROR: Wi-Fi connection timed out (${WIFI_TIMEOUT}s)."
     lipc-set-prop com.lab126.powerd preventScreenSaver 0 2>/dev/null || true
     exit 1
 fi
 
-eips 0 38 "Wi-Fi connected. Fetching dashboard..." 2>/dev/null || true
+log "Wi-Fi connected in ${TIMER}s."
 
-# ---------- Step 2: Get device MAC ----------
+# 3. Detect MAC Address
 MAC_ADDR=""
 if [ -f /sys/class/net/wlan0/address ]; then
     MAC_ADDR="$(cat /sys/class/net/wlan0/address | tr -d '\r\n')"
@@ -80,7 +113,7 @@ if [ -z "$MAC_ADDR" ]; then
 fi
 [ -z "$MAC_ADDR" ] && MAC_ADDR="kindle-wp63gw"
 
-# ---------- Step 3: Fetch image (blocking, while KUAL is still open) ----------
+# 4. Fetch Display Image
 SCREEN_FILE="/tmp/screen.png"
 rm -f "$SCREEN_FILE"
 
@@ -90,46 +123,34 @@ else
     FETCH_URL="${SERVER_URL}/api/display?mac=${MAC_ADDR}&rotate=90"
 fi
 
+log "Fetching image from ${FETCH_URL}..."
+
 FETCH_EXIT=1
 if command -v curl >/dev/null 2>&1; then
-    curl -s -m 15 -o "$SCREEN_FILE" "$FETCH_URL"
+    curl -s -m 20 -o "$SCREEN_FILE" "$FETCH_URL"
     FETCH_EXIT=$?
-else
-    wget -q -O "$SCREEN_FILE" "$FETCH_URL"
+elif command -v wget >/dev/null 2>&1; then
+    wget -q -T 20 -O "$SCREEN_FILE" "$FETCH_URL"
     FETCH_EXIT=$?
 fi
 
-# Disable Wi-Fi now that we have the image
+# Turn OFF Wi-Fi immediately to save battery
+log "Disabling Wi-Fi..."
 lipc-set-prop com.lab126.cmd wirelessEnable 0 2>/dev/null || true
 
-# ---------- Step 4: Launch deferred background render ----------
-# KUAL will exit after this script finishes. We give it 3 seconds to close
-# and for the home screen to repaint, then we overwrite it with the dashboard.
-# E-ink holds whatever eips/fbink last drew, so the dashboard then persists.
-
+# 5. Render to Screen
 if [ $FETCH_EXIT -eq 0 ] && [ -s "$SCREEN_FILE" ]; then
-    BYTES="$(wc -c < "$SCREEN_FILE" | tr -d ' ')"
-    eips 0 38 "Image ready (${BYTES} bytes)." 2>/dev/null || true
-    eips 0 39 "Dashboard appears in ~3 seconds..." 2>/dev/null || true
-
+    log "Image downloaded successfully ($(wc -c < "$SCREEN_FILE") bytes)."
     if [ -n "$FOUND_FBINK" ]; then
-        # fbink handles rotation natively; no need for eips -c first
-        FBINK_BIN="$FOUND_FBINK"
-        FBINK_ROT="$FBINK_ROTATION"
-        SCRF="$SCREEN_FILE"
-        nohup sh -c "sleep 3; '$FBINK_BIN' -q -g -c -r '$FBINK_ROT' '$SCRF'" \
-            > /tmp/kindle-once.log 2>&1 &
-    else
-        SCRF="$SCREEN_FILE"
-        nohup sh -c "sleep 3; eips -c; sleep 1; eips -g '$SCRF'" \
-            > /tmp/kindle-once.log 2>&1 &
+        log "Drawing with fbink (rotation: $FBINK_ROTATION)..."
+        "$FOUND_FBINK" -q -g -c -r "$FBINK_ROTATION" "$SCREEN_FILE"
+    elif command -v eips >/dev/null 2>&1; then
+        log "Drawing with native eips..."
+        eips -c
+        sleep 1
+        eips -g "$SCREEN_FILE"
     fi
+    log "Display refresh complete."
 else
-    eips 0 38 "Error: failed to download image." 2>/dev/null || true
-    eips 0 39 "Server: ${SERVER_URL}" 2>/dev/null || true
-    lipc-set-prop com.lab126.powerd preventScreenSaver 0 2>/dev/null || true
+    log "ERROR: Failed to download display image (Exit: $FETCH_EXIT)."
 fi
-
-# Script exits here -> KUAL closes (exitmenu: true) -> home screen briefly
-# -> background render fires 3s later, dashboard overwrites home screen
-# -> dashboard persists (e-ink retains image; screensaver suppressed)

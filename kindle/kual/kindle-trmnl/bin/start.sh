@@ -1,55 +1,68 @@
 #!/bin/sh
 # ==============================================================================
 # Kindle TRMNL - Start Background Loop
-# Strategy: fetch the first dashboard frame synchronously (user sees progress),
-# launch a deferred render for 3s after KUAL exits, then start the background
-# loop for subsequent periodic refreshes.
+# Detaches from KUAL, stops the Kindle reader framework (so nothing repaints
+# over the dashboard), and starts the background refresh loop.
 # ==============================================================================
 
 EXT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Self-heal: strip Windows carriage returns from all scripts
+# Strip Windows carriage returns from all scripts
 sed -i -e 's/\r$//' "${EXT_DIR}"/*.sh "${EXT_DIR}/bin"/*.sh 2>/dev/null || true
 chmod +x "${EXT_DIR}"/*.sh "${EXT_DIR}/bin"/*.sh 2>/dev/null || true
 
-# Load config
+# Self-detach so KUAL can close cleanly without killing our loop
+if [ "$1" != "__run" ]; then
+    SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+    if command -v setsid >/dev/null 2>&1; then
+        setsid /bin/sh "$SCRIPT_PATH" __run </dev/null >/tmp/kindle-start.log 2>&1 &
+    else
+        /bin/sh "$SCRIPT_PATH" __run </dev/null >/tmp/kindle-start.log 2>&1 &
+    fi
+    exit 0
+fi
+
+trap '' HUP
+
+# Wait for KUAL to finish closing
+sleep 3
+
+# Load configuration
 if [ -f "${EXT_DIR}/config.sh" ]; then
     . "${EXT_DIR}/config.sh"
 elif [ -f "/mnt/us/extensions/kindle-trmnl/config.sh" ]; then
     . "/mnt/us/extensions/kindle-trmnl/config.sh"
 fi
 
-SERVER_URL="${SERVER_URL:-http://10.0.0.219:5055}"
-WIFI_TIMEOUT="${WIFI_TIMEOUT:-20}"
-FBINK_ROTATION="${FBINK_ROTATION:-1}"
 PID_FILE="/tmp/kindle-trmnl.pid"
+LOG_FILE="${LOG_FILE:-/tmp/kindle-trmnl.log}"
 
-# Detect fbink
-FOUND_FBINK=""
-if [ -x "${EXT_DIR}/bin/fbink" ]; then
-    FOUND_FBINK="${EXT_DIR}/bin/fbink"
-elif command -v fbink >/dev/null 2>&1; then
-    FOUND_FBINK="$(command -v fbink)"
-elif [ -x "/usr/bin/fbink" ]; then
-    FOUND_FBINK="/usr/bin/fbink"
-elif [ -x "/mnt/us/bin/fbink" ]; then
-    FOUND_FBINK="/mnt/us/bin/fbink"
-elif [ -x "/mnt/us/extensions/MRInstaller/bin/fbink" ]; then
-    FOUND_FBINK="/mnt/us/extensions/MRInstaller/bin/fbink"
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [START] $*" >> "$LOG_FILE"
+    echo "[START] $*"
+}
+
+# Check if already running
+if [ -f "$PID_FILE" ]; then
+    OLD_PID="$(cat "$PID_FILE" 2>/dev/null)"
+    if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
+        log "Loop already running with PID $OLD_PID."
+        exit 0
+    fi
+    rm -f "$PID_FILE"
 fi
 
-eips 0 34 "==== KINDLE TRMNL ====" 2>/dev/null || true
-eips 0 35 "Start Dashboard Loop" 2>/dev/null || true
-eips 0 36 "" 2>/dev/null || true
-
-# Guard: already running?
-if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
-    RPID="$(cat "$PID_FILE")"
-    eips 0 37 "Loop already running (PID $RPID)." 2>/dev/null || true
-    eips 0 38 "Stop it first before restarting." 2>/dev/null || true
-    exit 0
+# Stop Kindle reader framework to take over screen (matches kindle-dash and jstriblet)
+log "Taking over screen: stopping reader framework..."
+if command -v initctl >/dev/null 2>&1; then
+    initctl stop framework >/dev/null 2>&1 || initctl stop lab126_gui >/dev/null 2>&1 || true
+    initctl stop webreader >/dev/null 2>&1 || true
+elif [ -x /etc/init.d/framework ]; then
+    /etc/init.d/framework stop >/dev/null 2>&1 || true
 fi
-rm -f "$PID_FILE"
+
+# Prevent screensaver
+lipc-set-prop com.lab126.powerd preventScreenSaver 1 2>/dev/null || true
 
 # Locate loop.sh
 LOOP_SCRIPT=""
@@ -57,92 +70,23 @@ if [ -f "${EXT_DIR}/loop.sh" ]; then
     LOOP_SCRIPT="${EXT_DIR}/loop.sh"
 elif [ -f "/mnt/us/extensions/kindle-trmnl/loop.sh" ]; then
     LOOP_SCRIPT="/mnt/us/extensions/kindle-trmnl/loop.sh"
-elif [ -f "/mnt/us/kindle-trmnl-dashboard/kindle/kual/kindle-trmnl/loop.sh" ]; then
-    LOOP_SCRIPT="/mnt/us/kindle-trmnl-dashboard/kindle/kual/kindle-trmnl/loop.sh"
+elif [ -f "/mnt/us/kindle-trmnl-dashboard/kindle/loop.sh" ]; then
+    LOOP_SCRIPT="/mnt/us/kindle-trmnl-dashboard/kindle/loop.sh"
 fi
 
-if [ -z "$LOOP_SCRIPT" ]; then
-    eips 0 37 "Error: loop.sh not found!" 2>/dev/null || true
-    eips 0 38 "Expected: ${EXT_DIR}/loop.sh" 2>/dev/null || true
-    exit 1
-fi
-
-# Prevent screensaver
-lipc-set-prop com.lab126.powerd preventScreenSaver 1 2>/dev/null || true
-
-# ---------- Step 1: Enable Wi-Fi & fetch first frame (blocking) ----------
-eips 0 37 "Enabling Wi-Fi for first refresh..." 2>/dev/null || true
-lipc-set-prop com.lab126.cmd wirelessEnable 1 2>/dev/null || true
-
-CONNECTED=0; TIMER=0
-while [ $TIMER -lt "$WIFI_TIMEOUT" ]; do
-    if ifconfig wlan0 2>/dev/null | grep -q "inet"; then CONNECTED=1; break; fi
-    sleep 1; TIMER=$((TIMER + 1))
-done
-[ $CONNECTED -eq 0 ] && sleep 2
-[ $CONNECTED -eq 0 ] && ifconfig wlan0 2>/dev/null | grep -q "inet" && CONNECTED=1
-
-SCREEN_FILE="/tmp/screen.png"
-
-if [ $CONNECTED -eq 1 ]; then
-    eips 0 37 "Downloading first frame..." 2>/dev/null || true
-
-    MAC_ADDR=""
-    [ -f /sys/class/net/wlan0/address ] && MAC_ADDR="$(cat /sys/class/net/wlan0/address | tr -d '\r\n')"
-    [ -z "$MAC_ADDR" ] && MAC_ADDR="$(lipc-get-prop com.lab126.cmd macAddress 2>/dev/null | tr -d '\r\n')"
-    [ -z "$MAC_ADDR" ] && MAC_ADDR="kindle-wp63gw"
-
-    rm -f "$SCREEN_FILE"
-    if [ -n "$FOUND_FBINK" ]; then
-        FETCH_URL="${SERVER_URL}/api/display?mac=${MAC_ADDR}"
+if [ -n "$LOOP_SCRIPT" ]; then
+    log "Launching loop script: $LOOP_SCRIPT"
+    if command -v setsid >/dev/null 2>&1; then
+        setsid /bin/sh "$LOOP_SCRIPT" </dev/null >> "$LOG_FILE" 2>&1 &
     else
-        FETCH_URL="${SERVER_URL}/api/display?mac=${MAC_ADDR}&rotate=90"
+        /bin/sh "$LOOP_SCRIPT" </dev/null >> "$LOG_FILE" 2>&1 &
     fi
-
-    if command -v curl >/dev/null 2>&1; then
-        curl -s -m 15 -o "$SCREEN_FILE" "$FETCH_URL"
+    sleep 2
+    if [ -f "$PID_FILE" ]; then
+        log "Dashboard loop started successfully (PID $(cat "$PID_FILE"))."
     else
-        wget -q -O "$SCREEN_FILE" "$FETCH_URL"
-    fi
-
-    lipc-set-prop com.lab126.cmd wirelessEnable 0 2>/dev/null || true
-else
-    eips 0 37 "Wi-Fi unavailable - loop will try on next cycle." 2>/dev/null || true
-    lipc-set-prop com.lab126.cmd wirelessEnable 0 2>/dev/null || true
-fi
-
-# ---------- Step 2: Start background loop ----------
-nohup sh "$LOOP_SCRIPT" > /tmp/kindle-loop.log 2>&1 &
-sleep 1
-
-if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
-    STARTED_PID="$(cat "$PID_FILE")"
-    eips 0 38 "Loop started (PID $STARTED_PID)." 2>/dev/null || true
-else
-    eips 0 38 "Warning: loop may not have started." 2>/dev/null || true
-fi
-
-# ---------- Step 3: Deferred render of first frame ----------
-# KUAL exits after this script. We fire the render 3s later so the
-# home-screen repaint has settled and our eips write persists on screen.
-if [ -s "$SCREEN_FILE" ]; then
-    BYTES="$(wc -c < "$SCREEN_FILE" | tr -d ' ')"
-    eips 0 39 "Dashboard appears in ~3s (${BYTES} bytes ready)" 2>/dev/null || true
-
-    if [ -n "$FOUND_FBINK" ]; then
-        FBINK_BIN="$FOUND_FBINK"
-        FBINK_ROT="$FBINK_ROTATION"
-        SCRF="$SCREEN_FILE"
-        nohup sh -c "sleep 3; '$FBINK_BIN' -q -g -c -r '$FBINK_ROT' '$SCRF'" \
-            > /tmp/kindle-start.log 2>&1 &
-    else
-        SCRF="$SCREEN_FILE"
-        nohup sh -c "sleep 3; eips -c; sleep 1; eips -g '$SCRF'" \
-            > /tmp/kindle-start.log 2>&1 &
+        log "Dashboard loop launched."
     fi
 else
-    eips 0 39 "Loop running - first refresh coming via loop." 2>/dev/null || true
+    log "ERROR: loop.sh not found!"
 fi
-
-# Script exits -> KUAL closes -> home screen briefly -> deferred render fires
-# -> dashboard persists. Loop then keeps refreshing every cycle.

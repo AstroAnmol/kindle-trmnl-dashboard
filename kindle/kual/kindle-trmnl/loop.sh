@@ -6,20 +6,21 @@
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PID_FILE="/tmp/kindle-trmnl.pid"
+LOG_FILE="/tmp/kindle-trmnl.log"
 
 echo $$ > "$PID_FILE"
 
 cleanup() {
-    echo "Stopping Kindle TRMNL dashboard loop..."
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [LOOP] Stopping loop (PID: $$)..." >> "$LOG_FILE"
     rm -f "$PID_FILE"
-    lipc-set-prop com.lab126.powerd preventScreenSaver 0 2>/dev/null || true
-    lipc-set-prop com.lab126.cmd wirelessEnable 1 2>/dev/null || true
     exit 0
 }
 
-trap cleanup INT TERM HUP
+trap cleanup INT TERM
+# Crucial: ignore SIGHUP so KUAL session closure cannot kill this loop
+trap '' HUP
 
-echo "Starting Kindle TRMNL Dashboard loop (PID: $$)..."
+echo "$(date '+%Y-%m-%d %H:%M:%S') [LOOP] Started Kindle TRMNL Dashboard loop (PID: $$)" >> "$LOG_FILE"
 
 while true; do
     sh "${SCRIPT_DIR}/display.sh" --sleep
