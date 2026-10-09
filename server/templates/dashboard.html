@@ -11,8 +11,9 @@
            TRMNL Monochrome Design System (Kindle Portrait 600x800)
            Layout:
              Row 1: Weather (Left) | Date + Time (Right)
-             Row 2: Calendar (Full-Width Monthly Grid)
-             Row 3: Upcoming Events (Left) | To Do (Right)
+             Row 2: Calendar (Reduced Height Full-Width Monthly Grid)
+             Row 3: Left Column: Upcoming Events (Top) & To-Do (Bottom)
+                    Right Column: Quick Notes (Top) & Weekly Menu (Bottom)
            ================================================================== */
         * {
             box-sizing: border-box;
@@ -57,7 +58,7 @@
             border: var(--border-width) solid var(--border-color);
             border-radius: var(--card-radius);
             background: #ffffff;
-            padding: 6px 8px;
+            padding: 5px 8px;
             display: flex;
             flex-direction: column;
             min-height: 0;
@@ -69,34 +70,34 @@
             align-items: center;
             padding-bottom: 2px;
             border-bottom: 2px solid var(--border-color);
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             flex-shrink: 0;
         }
 
         .card-title {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.6px;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
         }
 
         .card-badge {
-            font-size: 9px;
+            font-size: 8.5px;
             font-weight: 700;
-            padding: 1px 6px;
+            padding: 1px 5px;
             background: #000000;
             color: #ffffff;
-            border-radius: 10px;
+            border-radius: 8px;
         }
 
         /* ==================================================================
            1. Top Row: Weather Card (Left) & Date + Time Card (Right)
            ================================================================== */
         .top-row {
-            height: 84px;
+            height: 80px;
             display: flex;
             gap: 6px;
             flex-shrink: 0;
@@ -104,7 +105,7 @@
 
         .weather-card {
             flex: 1.15;
-            padding: 6px 10px;
+            padding: 5px 9px;
             display: flex;
             flex-direction: row;
             align-items: center;
@@ -120,14 +121,14 @@
         }
 
         .weather-main-icon {
-            width: 38px;
-            height: 38px;
+            width: 36px;
+            height: 36px;
             flex-shrink: 0;
         }
 
         .weather-main-icon svg {
-            width: 38px;
-            height: 38px;
+            width: 36px;
+            height: 36px;
             fill: currentColor;
             display: block;
         }
@@ -139,16 +140,16 @@
         }
 
         .weather-temp {
-            font-size: 32px;
+            font-size: 30px;
             font-weight: 900;
             line-height: 0.95;
             letter-spacing: -1px;
         }
 
         .weather-condition {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 700;
-            margin-top: 2px;
+            margin-top: 1px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -158,35 +159,35 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            gap: 2px;
+            gap: 1px;
             flex-shrink: 0;
         }
 
         .weather-pill {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 800;
             color: #000000;
         }
 
         .weather-hilow {
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 800;
             display: flex;
-            gap: 6px;
+            gap: 5px;
         }
 
         .weather-details-grid {
             display: flex;
-            gap: 6px;
+            gap: 5px;
             margin-top: 1px;
-            font-size: 9px;
+            font-size: 8.5px;
             font-weight: 600;
             color: #333333;
         }
 
         .datetime-card {
             flex: 0.85;
-            padding: 6px 10px;
+            padding: 5px 9px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -200,7 +201,7 @@
         }
 
         .datetime-time {
-            font-size: 30px;
+            font-size: 28px;
             font-weight: 900;
             font-family: var(--font-mono);
             letter-spacing: -1px;
@@ -208,12 +209,12 @@
         }
 
         .datetime-badge {
-            font-size: 9px;
+            font-size: 8.5px;
             font-weight: 800;
-            padding: 1px 6px;
+            padding: 1px 5px;
             background: #000000;
             color: #ffffff;
-            border-radius: 10px;
+            border-radius: 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -225,7 +226,7 @@
         }
 
         .datetime-day {
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 0.8px;
@@ -233,18 +234,18 @@
         }
 
         .datetime-date {
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 700;
             color: #333333;
             line-height: 1.1;
         }
 
         /* ==================================================================
-           2. Middle Row: Calendar (Full-Width Monthly Grid)
+           2. Middle Row: Calendar (Compact Full-Width Monthly Grid)
            ================================================================== */
         .calendar-row {
-            flex: 1;
-            min-height: 0;
+            height: 275px;
+            flex-shrink: 0;
             display: flex;
         }
 
@@ -255,25 +256,25 @@
             flex-direction: column;
             min-height: 0;
             overflow: hidden;
-            padding: 6px 8px;
+            padding: 5px 7px;
         }
 
         .cal-header-row {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 3px;
-            margin-bottom: 3px;
+            gap: 2px;
+            margin-bottom: 2px;
             flex-shrink: 0;
             text-align: center;
         }
 
         .cal-day-header {
-            font-size: 9.5px;
+            font-size: 9px;
             font-weight: 800;
             text-transform: uppercase;
             padding: 1px 0;
             color: #222222;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
         }
 
         .cal-grid {
@@ -281,14 +282,14 @@
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             grid-auto-rows: 1fr;
-            gap: 3px;
+            gap: 2px;
             min-height: 0;
         }
 
         .cal-cell {
-            border: 1px solid #c0c0c0;
-            border-radius: 4px;
-            padding: 3px 4px;
+            border: 1px solid #c8c8c8;
+            border-radius: 3px;
+            padding: 2px 3px;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
@@ -298,9 +299,9 @@
         }
 
         .cal-cell.other-month {
-            background: #f8f8f8;
-            color: #888888;
-            border-color: #dddddd;
+            background: #fafafa;
+            color: #999999;
+            border-color: #e2e2e2;
         }
 
         .cal-cell.is-today {
@@ -313,25 +314,25 @@
             justify-content: space-between;
             align-items: center;
             line-height: 1;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
 
         .cal-date-num {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 800;
         }
 
         .cal-cell.is-today .cal-date-num {
             background: #000000;
             color: #ffffff;
-            padding: 1px 4px;
+            padding: 1px 3px;
             border-radius: 2px;
-            font-size: 10px;
+            font-size: 9px;
         }
 
         .cal-event-dot {
-            width: 4px;
-            height: 4px;
+            width: 3.5px;
+            height: 3.5px;
             border-radius: 50%;
             background: #000000;
             display: inline-block;
@@ -340,18 +341,20 @@
         .cal-events-wrap {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
             overflow: hidden;
             flex: 1;
+            margin-top: 1px;
         }
 
         .cal-mini-event {
-            font-size: 8px;
+            font-size: 7.5px;
             font-weight: 700;
-            line-height: 1.15;
-            padding: 1px 3px;
+            line-height: 12px;
+            height: 12px;
+            padding: 0 2px;
             background: #eeeeee;
-            border: 1px solid #444444;
+            border: 1px solid #555555;
             border-radius: 2px;
             white-space: nowrap;
             overflow: hidden;
@@ -366,22 +369,43 @@
         }
 
         .cal-more-dots {
-            font-size: 7.5px;
+            font-size: 6.5px;
             font-weight: 800;
             color: #444444;
             line-height: 1;
         }
 
         /* ==================================================================
-           3. Bottom Row: Events (Left) & To Do (Right)
+           3. Bottom Row: 2 Columns
+              Left Column: Upcoming Events (Top) & To Do (Bottom)
+              Right Column: Quick Notes (Top) & Weekly Menu (Bottom)
            ================================================================== */
         .bottom-row {
-            height: 242px;
+            flex: 1;
+            min-height: 0;
             display: flex;
             gap: 6px;
-            flex-shrink: 0;
         }
 
+        .left-column {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            height: 100%;
+        }
+
+        .right-column {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            height: 100%;
+        }
+
+        /* 3A. Upcoming Agenda Events */
         .agenda-card {
             flex: 1;
             display: flex;
@@ -393,7 +417,7 @@
         .agenda-list {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
             overflow: hidden;
             flex: 1;
         }
@@ -401,7 +425,7 @@
         .agenda-item {
             display: flex;
             flex-direction: column;
-            padding: 2px 0;
+            padding: 1px 0;
             border-bottom: 1px dashed #aaaaaa;
         }
 
@@ -412,15 +436,15 @@
         .agenda-top-row {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
         }
 
         .agenda-badge {
-            font-size: 8.5px;
+            font-size: 8px;
             font-weight: 800;
             font-family: var(--font-mono);
             white-space: nowrap;
-            padding: 1px 4px;
+            padding: 0 3px;
             background: #000000;
             color: #ffffff;
             border-radius: 2px;
@@ -429,7 +453,7 @@
         }
 
         .agenda-time {
-            font-size: 9.5px;
+            font-size: 8.5px;
             font-weight: 800;
             font-family: var(--font-mono);
             color: #333333;
@@ -437,23 +461,23 @@
         }
 
         .agenda-title {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-top: 1px;
-            line-height: 1.2;
+            line-height: 1.15;
         }
 
         .agenda-meta {
-            font-size: 9px;
+            font-size: 8px;
             color: #555555;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
+        /* 3B. To Do Tasks */
         .tasks-card {
             flex: 1;
             display: flex;
@@ -465,7 +489,7 @@
         .task-list {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 3px;
             overflow: hidden;
             flex: 1;
         }
@@ -473,16 +497,16 @@
         .task-item {
             display: flex;
             align-items: flex-start;
-            gap: 6px;
-            font-size: 11px;
+            gap: 5px;
+            font-size: 10px;
             font-weight: 600;
             line-height: 1.2;
         }
 
         .task-checkbox {
-            width: 12px;
-            height: 12px;
-            border: 2px solid #000000;
+            width: 11px;
+            height: 11px;
+            border: 1.5px solid #000000;
             border-radius: 2px;
             flex-shrink: 0;
             margin-top: 1px;
@@ -496,8 +520,8 @@
         }
 
         .task-checkbox.checked svg {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             fill: #ffffff;
             display: block;
         }
@@ -516,16 +540,117 @@
 
         .footer-info {
             margin-top: auto;
-            padding-top: 3px;
+            padding-top: 2px;
             border-top: 1px solid #cccccc;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 8px;
+            font-size: 7.5px;
             font-weight: 700;
             text-transform: uppercase;
             color: #555555;
             flex-shrink: 0;
+        }
+
+        /* 3C. Quick Notes */
+        .notes-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 9.5px;
+            font-weight: 600;
+            color: #222222;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .note-item {
+            display: flex;
+            gap: 4px;
+            line-height: 1.25;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .note-bullet {
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+
+        /* 3D. Weekly Menu (7 Days) */
+        .menu-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .menu-list {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 1px;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 1px 0;
+            border-bottom: 1px dashed #dddddd;
+            min-width: 0;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .menu-day-badge {
+            font-size: 8px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            padding: 0 3px;
+            min-width: 28px;
+            text-align: center;
+            border: 1px solid #000000;
+            border-radius: 2px;
+            background: #f0f0f0;
+            color: #000000;
+            flex-shrink: 0;
+            line-height: 1.2;
+        }
+
+        .menu-day-badge.today {
+            background: #000000;
+            color: #ffffff;
+            border-color: #000000;
+        }
+
+        .menu-meal-text {
+            font-size: 9.5px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #111111;
+            flex: 1;
+        }
+
+        .menu-item.is-today .menu-meal-text {
+            font-weight: 800;
+            color: #000000;
         }
     </style>
 </head>
@@ -581,7 +706,7 @@
         </header>
 
         <!-- ================================================================
-             2. Middle Row: Calendar (Full Width Monthly Grid)
+             2. Middle Row: Calendar (Compact Full-Width Monthly Grid)
              ================================================================ -->
         <section class="calendar-row">
             <div class="card month-cal-card">
@@ -611,13 +736,13 @@
 
                                 {% if day.events %}
                                     <div class="cal-events-wrap">
-                                        {% for ev in day.events[:2] %}
+                                        {% for ev in day.events[:1] %}
                                             <div class="cal-mini-event {{ 'all-day' if ev.all_day else '' }}" title="{{ ev.title }}">
                                                 {{ ev.title }}
                                             </div>
                                         {% endfor %}
-                                        {% if day.event_count > 2 %}
-                                            <div class="cal-more-dots">+{{ day.event_count - 2 }} more</div>
+                                        {% if day.event_count > 1 %}
+                                            <div class="cal-more-dots">+{{ day.event_count - 1 }} more</div>
                                         {% endif %}
                                     </div>
                                 {% endif %}
@@ -629,71 +754,130 @@
         </section>
 
         <!-- ================================================================
-             3. Bottom Row: Events (Left) & To Do (Right)
+             3. Bottom Row: 2 Columns
+                Left: Upcoming Events (Top) & To-Do (Bottom)
+                Right: Quick Notes (Top) & Weekly Menu (Bottom)
              ================================================================ -->
         <footer class="bottom-row">
-            <!-- Events Card -->
-            <div class="card agenda-card">
-                <div class="card-header">
-                    <div class="card-title">
-                        <span>Upcoming Events</span>
+            
+            <!-- Left Column: Upcoming Events & To Do -->
+            <section class="left-column">
+                
+                <!-- Upcoming Events Card -->
+                <div class="card agenda-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>Upcoming Events</span>
+                        </div>
+                        <span class="card-badge">{{ calendar.next_events | length }} Events</span>
                     </div>
-                    <span class="card-badge">{{ calendar.next_events | length }} Events</span>
-                </div>
 
-                <div class="agenda-list">
-                    {% if calendar.next_events %}
-                        {% for ev in calendar.next_events[:5] %}
+                    <div class="agenda-list">
+                        {% if calendar.next_events %}
+                            {% for ev in calendar.next_events[:4] %}
+                                <div class="agenda-item">
+                                    <div class="agenda-top-row">
+                                        <span class="agenda-badge">{{ ev.day_badge }}</span>
+                                        <span class="agenda-time">{{ ev.time }}</span>
+                                    </div>
+                                    <div class="agenda-title">{{ ev.title }}</div>
+                                    {% if ev.location %}
+                                        <div class="agenda-meta">&bull; {{ ev.location }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        {% else %}
                             <div class="agenda-item">
                                 <div class="agenda-top-row">
-                                    <span class="agenda-badge">{{ ev.day_badge }}</span>
-                                    <span class="agenda-time">{{ ev.time }}</span>
+                                    <span class="agenda-badge">Schedule</span>
                                 </div>
-                                <div class="agenda-title">{{ ev.title }}</div>
-                                {% if ev.location %}
-                                    <div class="agenda-meta">&bull; {{ ev.location }}</div>
-                                {% endif %}
+                                <div class="agenda-title">No upcoming events scheduled</div>
+                                <div class="agenda-meta">Enjoy your clear schedule!</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- To Do Card (Below Upcoming Events) -->
+                <div class="card tasks-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>To Do</span>
+                        </div>
+                        <span class="card-badge">{{ tasks.completed_count }}/{{ tasks.total }} Done</span>
+                    </div>
+
+                    <div class="task-list">
+                        {% for task in tasks.tasks[:5] %}
+                            <div class="task-item {{ 'completed' if task.completed else '' }}">
+                                <div class="task-checkbox {{ 'checked' if task.completed else '' }}">
+                                    {% if task.completed %}
+                                        <svg width="7" height="7" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+                                    {% endif %}
+                                </div>
+                                <div class="task-text">{{ task.text }}</div>
                             </div>
                         {% endfor %}
-                    {% else %}
-                        <div class="agenda-item">
-                            <div class="agenda-top-row">
-                                <span class="agenda-badge">Schedule</span>
-                            </div>
-                            <div class="agenda-title">No upcoming events scheduled</div>
-                            <div class="agenda-meta">Enjoy your clear schedule!</div>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- To Do Card -->
-            <div class="card tasks-card">
-                <div class="card-header">
-                    <div class="card-title">
-                        <span>To Do</span>
                     </div>
-                    <span class="card-badge">{{ tasks.completed_count }}/{{ tasks.total }} Done</span>
+
+                    <div class="footer-info">
+                        <span>Updated: {{ last_updated }}</span>
+                        <span>Kindle WP63GW</span>
+                    </div>
                 </div>
 
-                <div class="task-list">
-                    {% for task in tasks.tasks[:6] %}
-                        <div class="task-item {{ 'completed' if task.completed else '' }}">
-                            <div class="task-checkbox {{ 'checked' if task.completed else '' }}">
-                                {% if task.completed %}
-                                    <svg width="8" height="8" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-                                {% endif %}
-                            </div>
-                            <div class="task-text">{{ task.text }}</div>
+            </section>
+
+            <!-- Right Column: Quick Notes & Weekly Menu -->
+            <section class="right-column">
+                
+                <!-- Quick Notes Card (Plain Notes) -->
+                <div class="card notes-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>Quick Notes</span>
                         </div>
-                    {% endfor %}
+                        <span class="card-badge">Notes</span>
+                    </div>
+
+                    <div class="notes-list">
+                        {% if tasks.notes %}
+                            {% for note in tasks.notes[:4] %}
+                                <div class="note-item">
+                                    <span class="note-bullet">&bull;</span>
+                                    <span>{{ note }}</span>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="note-item">
+                                <span class="note-bullet">&bull;</span>
+                                <span>Kindle TRMNL Dashboard active.</span>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
 
-                <div class="footer-info">
-                    <span>Updated: {{ last_updated }}</span>
-                    <span>Kindle WP63GW</span>
+                <!-- Weekly Menu Card (7 Days of the Week) -->
+                <div class="card menu-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <span>Weekly Menu</span>
+                        </div>
+                        <span class="card-badge">7 Days</span>
+                    </div>
+
+                    <div class="menu-list">
+                        {% for item in menu %}
+                            <div class="menu-item {{ 'is-today' if item.is_today else '' }}">
+                                <span class="menu-day-badge {{ 'today' if item.is_today else '' }}">{{ item.day }}</span>
+                                <span class="menu-meal-text">{{ item.meal }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
-            </div>
+
+            </section>
+
         </footer>
 
     </div>

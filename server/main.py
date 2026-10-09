@@ -127,6 +127,13 @@ async def build_dashboard_context() -> Dict[str, Any]:
     tasks_data = fetch_tasks_and_notes()
     telemetry_data = telemetry_service.get_data()
 
+    menu_data = tasks_data.get("menu", [])
+    for item in menu_data:
+        item["is_today"] = (
+            item.get("day_full", "").lower() == now_day.lower()
+            or item.get("day", "").lower() == now_day[:3].lower()
+        )
+
     return {
         "now_day": now_day,
         "now_date": now_date,
@@ -135,6 +142,7 @@ async def build_dashboard_context() -> Dict[str, Any]:
         "weather": weather_data,
         "calendar": calendar_data,
         "tasks": tasks_data,
+        "menu": menu_data,
         "telemetry": telemetry_data,
         "refresh_rate_seconds": settings.refresh_rate_seconds,
     }
@@ -331,6 +339,7 @@ async def api_get_tasks():
     return {
         "tasks": parsed.get("tasks", []),
         "notes": parsed.get("notes", []),
+        "menu": parsed.get("menu", []),
         "completed_count": parsed.get("completed_count", 0),
         "total": parsed.get("total", 0),
         "raw_markdown": raw,

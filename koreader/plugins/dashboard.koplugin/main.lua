@@ -100,8 +100,46 @@ function DashboardPlugin:init()
     -- Configure KOReader screensaver
     self:configureKOReaderScreensaver()
 
-    -- Schedule background periodic refresh if enabled
+    -- Schedule background periodic refresh (KOReader + hardware daemon)
     self:schedulePeriodicRefresh()
+    self:syncScheduler()
+
+    -- Register into KOReader Main Menu system
+    if self.ui and self.ui.menu and self.ui.menu.registerToMainMenu then
+        pcall(function() self.ui.menu:registerToMainMenu(self) end)
+    end
+end
+
+function DashboardPlugin:syncScheduler()
+    pcall(function()
+        local conf_dir = "/mnt/us/koreader/settings"
+        local conf_file = conf_dir .. "/dashboard_config.env"
+        local script_path = "/mnt/us/koreader/plugins/dashboard.koplugin/scheduler.sh"
+
+        os.execute("mkdir -p " .. conf_dir .. " 2>/dev/null")
+
+        local f = io.open(conf_file, "w")
+        if f then
+            f:write(string.format('INTERVAL=%d\nURL="%s"\n', self.periodic_interval or 900, self.server_url or "http://10.0.0.219:5055/api/display/image"))
+            f:close()
+        end
+
+        os.execute("chmod +x " .. script_path .. " 2>/dev/null")
+
+        if self.periodic_interval and self.periodic_interval > 0 then
+            log_info("Starting hardware background scheduler with interval: " .. tostring(self.periodic_interval))
+            os.execute("sh " .. script_path .. " restart >/dev/null 2>&1 &")
+        else
+            log_info("Stopping hardware background scheduler")
+            os.execute("sh " .. script_path .. " stop >/dev/null 2>&1")
+        end
+    end)
+end
+
+function DashboardPlugin:onMenuPrepare(menu)
+    if menu and menu.registerToMainMenu then
+        pcall(function() menu:registerToMainMenu(self) end)
+    end
 end
 
 function DashboardPlugin:configureKOReaderScreensaver()
@@ -357,27 +395,15 @@ end
 
 -- Hook into KOReader power suspend event
 function DashboardPlugin:onSuspend()
+    -- Sync and arm hardware background scheduler before sleeping
+    self:syncScheduler()
+
     if self.auto_update_on_sleep then
         pcall(function()
             self:downloadDashboard(function(ok)
                 if ok then
                     self:configureKOReaderScreensaver()
                 end
-            end)
-        end)
-    end
-
-    -- Schedule Active Sleep RTC wakeup if supported on Kindle
-    if self.periodic_interval and self.periodic_interval > 0 and Device and Device.wakeup_mgr then
-        pcall(function()
-            Device.wakeup_mgr:addTask(self.periodic_interval, function()
-                log_info("Active Sleep RTC wakeup triggered")
-                self:downloadDashboard(function(ok)
-                    if ok then
-                        self:configureKOReaderScreensaver()
-                        self:refreshScreen()
-                    end
-                end)
             end)
         end)
     end
@@ -412,6 +438,7 @@ function DashboardPlugin:addToMainMenu(menu_items)
                                 G_reader_settings:saveSetting("dashboard_periodic_interval", 0)
                             end
                             self:schedulePeriodicRefresh()
+                            self:syncScheduler()
                         end,
                     },
                     {
@@ -423,6 +450,7 @@ function DashboardPlugin:addToMainMenu(menu_items)
                                 G_reader_settings:saveSetting("dashboard_periodic_interval", 600)
                             end
                             self:schedulePeriodicRefresh()
+                            self:syncScheduler()
                         end,
                     },
                     {
@@ -434,6 +462,7 @@ function DashboardPlugin:addToMainMenu(menu_items)
                                 G_reader_settings:saveSetting("dashboard_periodic_interval", 900)
                             end
                             self:schedulePeriodicRefresh()
+                            self:syncScheduler()
                         end,
                     },
                     {
@@ -445,6 +474,7 @@ function DashboardPlugin:addToMainMenu(menu_items)
                                 G_reader_settings:saveSetting("dashboard_periodic_interval", 1800)
                             end
                             self:schedulePeriodicRefresh()
+                            self:syncScheduler()
                         end,
                     },
                     {
@@ -456,6 +486,7 @@ function DashboardPlugin:addToMainMenu(menu_items)
                                 G_reader_settings:saveSetting("dashboard_periodic_interval", 3600)
                             end
                             self:schedulePeriodicRefresh()
+                            self:syncScheduler()
                         end,
                     },
                 },
@@ -499,6 +530,7 @@ function DashboardPlugin:addToMainMenu(menu_items)
                                             if G_reader_settings then
                                                 G_reader_settings:saveSetting("dashboard_server_url", new_url)
                                             end
+                                            self:syncScheduler()
                                         end
                                         UIManager:close(dialog)
                                     end,
@@ -516,17 +548,32 @@ function DashboardPlugin:addToMainMenu(menu_items)
                 text = _("Device Diagnostics"),
                 callback = function()
                     local b_lvl, b_chg = self:getBatteryTelemetry()
+                    local pid = "None"
+                    pcall(function()
+                        local f = io.open("/tmp/kindle_dashboard_scheduler.pid", "r")
+                        if f then
+                            pid = f:read("*all"):gsub("%s+", "")
+                            f:close()
+                        end
+                    end)
                     local diag = string.format(
-                        "Battery: %s%%\nCharging: %s\nScreensaver File: %s\nURL: %s",
+                        "Battery: %s%%\nCharging: %s\nInterval: %dm\nHardware Scheduler PID: %s\nURL: %s",
                         tostring(b_lvl or "Unknown"),
                         (b_chg == 1 and "Yes" or "No"),
-                        self.screensaver_file,
+                        math.floor((self.periodic_interval or 900) / 60),
+                        pid,
                         self.server_url
                     )
                     show_notification(diag, 6)
                 end,
             },
         },
+    }
+    -- Also register under more_tools so it appears in both locations regardless of menu config
+    menu_items.dashboard_more = {
+        text = _("Kindle Dashboard"),
+        sorting_hint = "more_tools",
+        sub_item_table = menu_items.dashboard.sub_item_table,
     }
 end
 

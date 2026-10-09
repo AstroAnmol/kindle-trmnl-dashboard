@@ -22,3 +22,33 @@ def test_parse_json():
     result = _parse_json_tasks(json_data)
     assert len(result["tasks"]) == 2
     assert result["completed_count"] == 1
+    assert "menu" in result
+    assert len(result["menu"]) == 7
+
+def test_parse_weekly_menu():
+    sample_md = """
+# Focus
+- [ ] Task 1
+
+# Notes
+- A quick note
+
+# Weekly Menu
+- Mon: Pasta
+- Tue: Tacos
+- Wednesday: Salmon
+- Thu: Curry
+- Fri: Pizza
+- Sat: Burgers
+- Sun: Roast
+"""
+    result = _parse_markdown_tasks(sample_md)
+    assert "menu" in result
+    assert len(result["menu"]) == 7
+    days = [m["day"] for m in result["menu"]]
+    assert days == ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    meals = {m["day"]: m["meal"] for m in result["menu"]}
+    assert meals["Mon"] == "Pasta"
+    assert meals["Tue"] == "Tacos"
+    assert meals["Wed"] == "Salmon"
+    assert meals["Sun"] == "Roast"

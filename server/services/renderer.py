@@ -42,57 +42,74 @@ def _render_fallback_pillow(context: Dict[str, Any]) -> bytes:
 
     # 1. Top Row: Weather Card (Left) & Date + Time Card (Right)
     top_split = 320
-    draw.rectangle([(8, 8), (top_split, 92)], outline=(0, 0, 0), width=2)
+    draw.rectangle([(8, 8), (top_split, 88)], outline=(0, 0, 0), width=2)
     w = context.get("weather", {})
-    draw.text((18, 16), f"WEATHER: {w.get('temperature', '')}{w.get('unit', '')} - {w.get('condition', '')}", fill=(0, 0, 0))
-    draw.text((18, 42), f"Hi: {w.get('temp_max', '')}° | Lo: {w.get('temp_min', '')}° | Rain: {w.get('precipitation_probability', '')}%", fill=(0, 0, 0))
-    draw.text((18, 68), f"Loc: {w.get('location', '')}", fill=(0, 0, 0))
+    draw.text((16, 14), f"WEATHER: {w.get('temperature', '')}{w.get('unit', '')} - {w.get('condition', '')}", fill=(0, 0, 0))
+    draw.text((16, 38), f"Hi: {w.get('temp_max', '')}° | Lo: {w.get('temp_min', '')}° | Rain: {w.get('precipitation_probability', '')}%", fill=(0, 0, 0))
+    draw.text((16, 62), f"Loc: {w.get('location', '')}", fill=(0, 0, 0))
 
-    draw.rectangle([(top_split + 6, 8), (width - 8, 92)], outline=(0, 0, 0), width=2)
-    draw.text((top_split + 18, 16), f"{context.get('now_time', '')}", fill=(0, 0, 0))
-    draw.text((top_split + 18, 44), f"{context.get('now_day', '')}", fill=(0, 0, 0))
-    draw.text((top_split + 18, 68), f"{context.get('now_date', '')}", fill=(0, 0, 0))
+    draw.rectangle([(top_split + 6, 8), (width - 8, 88)], outline=(0, 0, 0), width=2)
+    draw.text((top_split + 16, 14), f"{context.get('now_time', '')}", fill=(0, 0, 0))
+    draw.text((top_split + 16, 40), f"{context.get('now_day', '')}", fill=(0, 0, 0))
+    draw.text((top_split + 16, 62), f"{context.get('now_date', '')}", fill=(0, 0, 0))
 
-    # 2. Middle Row: Calendar (Full Width)
-    cal_top = 98
-    cal_bottom = 544
+    # 2. Middle Row: Calendar (Compact Full Width)
+    cal_top = 94
+    cal_bottom = 368
     draw.rectangle([(8, cal_top), (width - 8, cal_bottom)], outline=(0, 0, 0), width=2)
     cal = context.get("calendar", {})
     month_grid = cal.get("month_grid", {})
     month_title = month_grid.get("month_title", "CALENDAR")
-    draw.text((18, cal_top + 10), f"CALENDAR: {month_title}", fill=(0, 0, 0))
+    draw.text((16, cal_top + 8), f"CALENDAR: {month_title}", fill=(0, 0, 0))
 
     headers = "   ".join(month_grid.get("headers", ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]))
-    draw.text((18, cal_top + 32), headers, fill=(0, 0, 0))
+    draw.text((16, cal_top + 28), headers, fill=(0, 0, 0))
 
-    cy = cal_top + 60
+    cy = cal_top + 48
     for week in month_grid.get("weeks", []):
         week_str = "    ".join(f"{d.get('day'):02d}" for d in week)
-        draw.text((18, cy), week_str, fill=(0, 0, 0))
-        cy += 45
+        draw.text((16, cy), week_str, fill=(0, 0, 0))
+        cy += 32
 
-    # 3. Bottom Row: Events (Left) & To Do (Right)
-    bot_top = 550
+    # 3. Bottom Row: 2 Columns
+    bot_top = 374
+    mid_split = 582
     bot_split = int((width - 16) / 2) + 8
-    draw.rectangle([(8, bot_top), (bot_split - 3, height - 8)], outline=(0, 0, 0), width=2)
-    draw.rectangle([(bot_split + 3, bot_top), (width - 8, height - 8)], outline=(0, 0, 0), width=2)
 
-    # Left: Upcoming Events
-    draw.text((18, bot_top + 10), "UPCOMING EVENTS:", fill=(0, 0, 0))
+    # Left Column: Upcoming Events (Top) & To-Do (Bottom)
+    draw.rectangle([(8, bot_top), (bot_split - 3, mid_split)], outline=(0, 0, 0), width=2)
+    draw.text((16, bot_top + 8), "UPCOMING EVENTS:", fill=(0, 0, 0))
     events = cal.get("next_events", [])
-    ey = bot_top + 36
-    for ev in events[:6]:
-        draw.text((18, ey), f"• {ev.get('day_badge', '')} {ev.get('time', '')} {ev.get('title', '')[:18]}", fill=(0, 0, 0))
-        ey += 24
+    ey = bot_top + 30
+    for ev in events[:4]:
+        draw.text((16, ey), f"• {ev.get('day_badge', '')} {ev.get('time', '')} {ev.get('title', '')[:16]}", fill=(0, 0, 0))
+        ey += 20
 
-    # Right: To Do Tasks
-    draw.text((bot_split + 14, bot_top + 10), "TO DO:", fill=(0, 0, 0))
+    draw.rectangle([(8, mid_split + 6), (bot_split - 3, height - 8)], outline=(0, 0, 0), width=2)
+    draw.text((16, mid_split + 12), "TO DO:", fill=(0, 0, 0))
     tasks = context.get("tasks", {}).get("tasks", [])
-    ty = bot_top + 36
-    for t in tasks[:7]:
+    ty = mid_split + 34
+    for t in tasks[:5]:
         mark = "[X]" if t.get("completed") else "[ ]"
-        draw.text((bot_split + 14, ty), f"{mark} {t.get('text', '')[:20]}", fill=(0, 0, 0))
-        ty += 24
+        draw.text((16, ty), f"{mark} {t.get('text', '')[:20]}", fill=(0, 0, 0))
+        ty += 20
+
+    # Right Column: Quick Notes (Top) & Weekly Menu (Bottom)
+    draw.rectangle([(bot_split + 3, bot_top), (width - 8, mid_split)], outline=(0, 0, 0), width=2)
+    draw.text((bot_split + 12, bot_top + 8), "QUICK NOTES:", fill=(0, 0, 0))
+    notes = context.get("tasks", {}).get("notes", [])
+    ny = bot_top + 30
+    for n in notes[:4]:
+        draw.text((bot_split + 12, ny), f"• {n[:22]}", fill=(0, 0, 0))
+        ny += 20
+
+    draw.rectangle([(bot_split + 3, mid_split + 6), (width - 8, height - 8)], outline=(0, 0, 0), width=2)
+    draw.text((bot_split + 12, mid_split + 12), "WEEKLY MENU:", fill=(0, 0, 0))
+    menu = context.get("menu", [])
+    my = mid_split + 34
+    for item in menu[:7]:
+        draw.text((bot_split + 12, my), f"{item.get('day', '')}: {item.get('meal', '')[:18]}", fill=(0, 0, 0))
+        my += 20
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")

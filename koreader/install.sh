@@ -93,6 +93,7 @@ elif [ "$METHOD" = "2" ]; then
 
     echo "Copying plugin via SCP to root@${KINDLE_IP}:/mnt/us/koreader/plugins/dashboard.koplugin ..."
     scp -r "${PLUGIN_SRC}" "root@${KINDLE_IP}:/mnt/us/koreader/plugins/"
+    ssh "root@${KINDLE_IP}" "chmod +x /mnt/us/koreader/plugins/dashboard.koplugin/*.sh"
 
     echo ""
     echo "✅ 'Kindle Dashboard' successfully transferred over Wi-Fi!"

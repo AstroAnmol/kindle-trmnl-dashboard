@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -363,6 +363,12 @@
                         <button class="btn btn-secondary" onclick="addNote()">Add Note</button>
                     </div>
                 </div>
+
+                <div style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 6px;">
+                    <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px;">Weekly Menu (7 Days)</div>
+                    <div id="menu-container" style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-secondary);"></div>
+                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Edit weekly meals anytime in the <strong>Raw Markdown Editor</strong> tab under <code># Weekly Menu</code>.</div>
+                </div>
             </div>
 
             <!-- Tab 2: Raw Markdown Editor -->
@@ -488,6 +494,20 @@
                     });
                 } else {
                     notesContainer.innerHTML = '<div>No quick notes recorded.</div>';
+                }
+
+                const menuContainer = document.getElementById('menu-container');
+                if (menuContainer) {
+                    menuContainer.innerHTML = '';
+                    if (data.menu && data.menu.length > 0) {
+                        data.menu.forEach(m => {
+                            const mDiv = document.createElement('div');
+                            mDiv.innerHTML = `<strong>${escapeHtml(m.day)}:</strong> ${escapeHtml(m.meal)}`;
+                            menuContainer.appendChild(mDiv);
+                        });
+                    } else {
+                        menuContainer.innerHTML = '<div>No weekly menu recorded.</div>';
+                    }
                 }
             } catch (err) {
                 console.error("Failed to load tasks:", err);

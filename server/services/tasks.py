@@ -88,10 +88,32 @@ def _fetch_google_keep_tasks() -> Optional[Dict[str, Any]]:
         logger.warning(f"Google Keep sync error: {e}. Falling back to local tasks.")
         return None
 
+DEFAULT_MENU = [
+    {"day": "Mon", "day_full": "Monday", "meal": "Pasta & Fresh Salad"},
+    {"day": "Tue", "day_full": "Tuesday", "meal": "Taco Tuesday"},
+    {"day": "Wed", "day_full": "Wednesday", "meal": "Grilled Salmon"},
+    {"day": "Thu", "day_full": "Thursday", "meal": "Chicken Curry & Rice"},
+    {"day": "Fri", "day_full": "Friday", "meal": "Homemade Pizza Night"},
+    {"day": "Sat", "day_full": "Saturday", "meal": "Burgers & Fries"},
+    {"day": "Sun", "day_full": "Sunday", "meal": "Sunday Roast"},
+]
+
 def _parse_markdown_tasks(content: str) -> Dict[str, Any]:
     tasks: List[Dict[str, Any]] = []
     notes: List[str] = []
+    menu_by_day: Dict[str, str] = {}
+    unkeyed_menu: List[str] = []
     current_section = "tasks"
+
+    day_aliases = {
+        "mon": "Mon", "monday": "Mon",
+        "tue": "Tue", "tues": "Tue", "tuesday": "Tue",
+        "wed": "Wed", "wednesday": "Wed",
+        "thu": "Thu", "thur": "Thu", "thurs": "Thu", "thursday": "Thu",
+        "fri": "Fri", "friday": "Fri",
+        "sat": "Sat", "saturday": "Sat",
+        "sun": "Sun", "sunday": "Sun",
+    }
 
     for line in content.splitlines():
         trimmed = line.strip()
@@ -100,7 +122,9 @@ def _parse_markdown_tasks(content: str) -> Dict[str, Any]:
 
         if trimmed.startswith("#"):
             header_lower = trimmed.lower()
-            if "note" in header_lower or "quick" in header_lower:
+            if any(k in header_lower for k in ["menu", "meal", "dinner", "food"]):
+                current_section = "menu"
+            elif any(k in header_lower for k in ["note", "quick"]):
                 current_section = "notes"
             else:
                 current_section = "tasks"
@@ -121,8 +145,41 @@ def _parse_markdown_tasks(content: str) -> Dict[str, Any]:
             item_text = bullet_match.group(1).strip()
             if current_section == "notes":
                 notes.append(item_text)
+            elif current_section == "menu":
+                # Look for Day prefix: "Mon: Pasta", "Monday - Tacos"
+                day_prefix_match = re.match(r"^([A-Za-z]+)\s*[:\-–]\s*(.*)$", item_text)
+                if day_prefix_match:
+                    raw_day = day_prefix_match.group(1).strip().lower()
+                    meal_text = day_prefix_match.group(2).strip()
+                    if raw_day in day_aliases:
+                        menu_by_day[day_aliases[raw_day]] = meal_text
+                    else:
+                        unkeyed_menu.append(item_text)
+                else:
+                    unkeyed_menu.append(item_text)
             else:
                 tasks.append({"text": item_text, "completed": False})
+
+    # Assemble 7-day menu (Mon through Sun)
+    final_menu: List[Dict[str, Any]] = []
+    unkeyed_idx = 0
+    for default_item in DEFAULT_MENU:
+        day_code = default_item["day"]
+        day_full = default_item["day_full"]
+        if day_code in menu_by_day:
+            meal = menu_by_day[day_code]
+        elif unkeyed_idx < len(unkeyed_menu):
+            meal = unkeyed_menu[unkeyed_idx]
+            unkeyed_idx += 1
+        else:
+            meal = default_item["meal"]
+
+        final_menu.append({
+            "day": day_code,
+            "day_full": day_full,
+            "meal": meal,
+            "is_today": False
+        })
 
     completed_count = sum(1 for t in tasks if t.get("completed"))
     pending_count = len(tasks) - completed_count
@@ -130,6 +187,7 @@ def _parse_markdown_tasks(content: str) -> Dict[str, Any]:
     return {
         "tasks": tasks,
         "notes": notes,
+        "menu": final_menu,
         "completed_count": completed_count,
         "pending_count": pending_count,
         "total": len(tasks),
@@ -153,6 +211,7 @@ def _parse_json_tasks(content: str) -> Dict[str, Any]:
             return {
                 "tasks": tasks,
                 "notes": [],
+                "menu": list(DEFAULT_MENU),
                 "completed_count": completed_count,
                 "pending_count": len(tasks) - completed_count,
                 "total": len(tasks),
@@ -165,6 +224,7 @@ def _parse_json_tasks(content: str) -> Dict[str, Any]:
     return {
         "tasks": list(DEFAULT_TASKS),
         "notes": [],
+        "menu": list(DEFAULT_MENU),
         "completed_count": 1,
         "pending_count": 4,
         "total": 5,
@@ -284,14 +344,20 @@ def add_note_to_file(note_text: str) -> bool:
         return save_raw_tasks_markdown(content)
 
     with open(task_file, "r", encoding="utf-8") as f:
-        content = f.read()
+        lines = f.readlines()
 
-    if "# Quick Notes" not in content and "# quick notes" not in content.lower():
-        content += f"\n# Quick Notes\n{note_line}"
-    else:
-        content += f"{note_line}"
+    # Insert before # Weekly Menu if present, else append
+    insert_pos = len(lines)
+    for idx, line in enumerate(lines):
+        if any(line.strip().lower().startswith(p) for p in ["# weekly menu", "# menu", "# meals", "# dinner"]):
+            insert_pos = idx
+            break
 
-    return save_raw_tasks_markdown(content)
+    lines.insert(insert_pos, note_line)
+    with open(task_file, "w", encoding="utf-8") as f:
+        f.writelines(lines)
+
+    return True
 
 def fetch_tasks_and_notes() -> Dict[str, Any]:
     # 1. Attempt Google Keep fetch if configured
@@ -326,6 +392,7 @@ def fetch_tasks_and_notes() -> Dict[str, Any]:
     return {
         "tasks": list(DEFAULT_TASKS),
         "notes": ["Welcome to your Kindle TRMNL dashboard!"],
+        "menu": list(DEFAULT_MENU),
         "completed_count": 1,
         "pending_count": 4,
         "total": 5,
